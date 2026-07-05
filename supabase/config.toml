@@ -1,0 +1,8 @@
+[project]
+id = "greenvibes-platform"
+
+[api]
+enabled = true
+
+[db]
+major_version = 15

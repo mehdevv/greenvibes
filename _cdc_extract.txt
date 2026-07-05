@@ -1,0 +1,541 @@
+🌿
+GREENVIBES
+AGENCY
+Tourisme & Découverte – Béjaïa, Algérie
+CAHIER DES CHARGES TECHNIQUE
+Plateforme Web de Tourisme & Système de Réservation en Ligne
+Version
+1.0 – Document initial
+Date
+Juin 2025
+Statut
+Soumis au client pour validation
+Client
+GreenVibes Agency – Béjaïa
+Confidentialité
+Document confidentiel – Usage interne
+TABLE DES MATIÈRES
+1. Présentation du Projet2
+1.1 Contexte2
+1.2 Objectifs Généraux3
+1.3 Cibles Utilisateurs3
+2. Identité Visuelle & Design3
+2.1 Charte Graphique3
+Palette de Couleurs3
+Typographie3
+2.2 Structure des Pages Publiques4
+2.3 Responsive Design4
+3. Fonctionnalités – Site Public4
+3.1 Système de Réservation4
+Flux de Réservation4
+Tableau des Fonctionnalités de Réservation5
+3.2 Catalogue des Destinations5
+4. Tableau de Bord Administrateur6
+4.1 Authentification & Accès6
+4.2 Gestion des Réservations6
+4.3 Gestion des Clients6
+4.4 Gestion des Offres & Disponibilités7
+4.5 Tableau de Bord – Statistiques7
+1. Présentation du Projet
+1.1 Contexte
+GreenVibes Agency est une agence touristique spécialisée dans la promotion et l'organisation de séjours et d'excursions dans la région de Béjaïa, en Algérie. Nichée entre mer et montagne, Béjaïa offre un patrimoine naturel et culturel exceptionnel – des criques de cristal de Tichy, aux hauteurs boisées du Parc National de Gouraya, en passant par les gorges de Kherrata.
+Dans un contexte de digitalisation croissante et d'essor du tourisme local et international vers l'Algérie, GreenVibes souhaite se doter d'une plateforme web complète réunissant une vitrine attractive de son identité visuelle et un système de réservation performant, accessible 24h/24.
+1.2 Objectifs Généraux
+Créer une vitrine numérique forte reflétant l'identité de marque GreenVibes.
+Permettre aux visiteurs de consulter les destinations, circuits et disponibilités en temps réel.
+Offrir un parcours de réservation simple et sécurisé avec gestion des places restantes.
+Équiper l'équipe interne d'un tableau de bord complet pour gérer clients, réservations et offres.
+Optimiser le référencement naturel (SEO) pour attirer un trafic qualifié.
+Garantir une expérience utilisateur fluide sur mobile, tablette et desktop.
+1.3 Cibles Utilisateurs
+Profil
+Description
+Touriste grand public
+Visiteur cherchant à découvrir Béjaïa, réserver un séjour ou une excursion.
+Famille algérienne
+Résidents souhaitant des escapades week-end ou vacances estivales.
+Touriste international
+Voyageurs étrangers à la recherche d'expériences authentiques en Algérie.
+Administrateur GreenVibes
+Membre de l'équipe gérant les offres, réservations et clients depuis le dashboard.
+2. Identité Visuelle & Design
+2.1 Charte Graphique
+L'identité visuelle de GreenVibes incarne les valeurs de la nature, de l'authenticité et de l'évasion. Elle s'inspire du vert des forêts de Béjaïa et du bleu profond de la Méditerranée.
+Palette de Couleurs
+Vert Forêt #2D6A4F
+Vert Clair #52B788
+Vert Pastel #D8F3DC
+Sable #F8F0E3
+Typographie
+Fonctionnalité
+Description
+Priorité
+Titre principal
+Montserrat Bold – Impact visuel fort, moderne et lisible
+Haute
+Corps du texte
+Open Sans Regular – Lisibilité optimale sur tous les écrans
+Haute
+Accent / Citation
+Playfair Display Italic – Touche élégante pour les accroches
+Moyenne
+2.2 Structure des Pages Publiques
+Le site sera organisé en plusieurs sections accessibles depuis la navigation principale :
+Page d'accueil (Hero vidéo/photo Béjaïa, slogan, appel à l'action réservation)
+Destinations – Galerie des circuits et lieux touristiques (Gouraya, Tichy, Corniche, Kherrata…)
+Nos Offres – Packages séjours, excursions journée, week-ends
+Réservation – Formulaire de réservation avec sélection de date et vérification des places
+À Propos – Histoire de l'agence, équipe, valeurs
+Galerie Photos/Vidéos – Médiathèque des destinations
+Blog / Actualités – Articles sur le tourisme à Béjaïa
+Contact – Formulaire, carte interactive, coordonnées
+2.3 Responsive Design
+L'ensemble du site sera développé selon une approche Mobile-First garantissant une expérience optimale sur :
+Fonctionnalité
+Description
+Priorité
+Mobile (< 768px)
+Navigation hamburger, cartes empilées, boutons larges tactiles
+Haute
+Tablette (768–1024px)
+Grille 2 colonnes, affichage condensé du calendrier
+Haute
+Desktop (> 1024px)
+Mise en page complète, galeries en grille, dashboard étendu
+Haute
+3. Fonctionnalités – Site Public
+3.1 Système de Réservation
+Le cœur du système est un moteur de réservation en temps réel permettant aux visiteurs de voir instantanément les disponibilités et de réserver en quelques étapes.
+Flux de Réservation
+Étape 1 → Sélection de l'offre ou destination
+Affichage des circuits disponibles avec photo, description, prix et durée.
+Filtres par type (mer, montagne, culturel), durée, prix et date.
+Étape 2 → Vérification des disponibilités
+Calendrier interactif avec indicateur de places disponibles par date.
+Affichage en temps réel : « 3 places restantes », « Complet », « Disponible ».
+Jauge visuelle de remplissage (ex. : barre verte/orange/rouge).
+Étape 3 → Renseignement des informations
+Formulaire : nom, prénom, téléphone, email, nombre de participants.
+Option d'ajout de demandes spéciales (régime alimentaire, accessibilité…).
+Étape 4 → Confirmation
+Récapitulatif de la réservation avec numéro de référence unique.
+Envoi automatique d'un email de confirmation au client.
+Notification SMS optionnelle de confirmation.
+Tableau des Fonctionnalités de Réservation
+Fonctionnalité
+Description
+Priorité
+Calendrier de disponibilité
+Vue mensuelle avec code couleur par disponibilité (vert/orange/rouge)
+Haute
+Compteur de places temps réel
+Affichage dynamique des places restantes par session
+Haute
+Blocage automatique
+Les places réservées sont bloquées instantanément pour éviter les doublons
+Haute
+Confirmation email
+Email automatique avec PDF récapitulatif et numéro de dossier
+Haute
+Paiement en ligne
+Intégration gateway de paiement (Algérie : Chargily / CIB / eDahabia)
+Moyenne
+Liste d'attente
+Inscription automatique sur liste d'attente si session complète
+Moyenne
+Annulation en ligne
+Possibilité d'annuler jusqu'à 48h avant le départ
+Moyenne
+Multilangue
+Interface disponible en Arabe, Français et Anglais
+Basse
+3.2 Catalogue des Destinations
+Fonctionnalité
+Description
+Priorité
+Fiches destination
+Page détaillée par lieu : photos HD, description, carte GPS, météo
+Haute
+Galerie photos immersive
+Slideshow et vue lightbox pour chaque destination
+Haute
+Avis clients
+Système de notation et commentaires vérifiés
+Moyenne
+Partage réseaux sociaux
+Boutons de partage Facebook, Instagram, WhatsApp
+Basse
+Téléchargement programme
+PDF du programme d'excursion téléchargeable
+Moyenne
+4. Tableau de Bord Administrateur
+Le dashboard est l'interface exclusive de l'équipe GreenVibes, accessible via un sous-domaine sécurisé (ex. admin.greenvibes.dz). Il centralise toute la gestion opérationnelle de l'agence.
+4.1 Authentification & Accès
+Fonctionnalité
+Description
+Priorité
+Connexion sécurisée
+Authentification par email + mot de passe avec chiffrement BCrypt
+Haute
+Double authentification
+Code OTP par SMS ou email pour les comptes admin principaux
+Haute
+Gestion des rôles
+Rôles : Super Admin, Gestionnaire, Commercial, Lecteur seul
+Haute
+Journal d'activité
+Historique de toutes les actions avec date, heure et utilisateur
+Moyenne
+Déconnexion automatique
+Session expirée après 30 minutes d'inactivité
+Haute
+4.2 Gestion des Réservations
+Vue centralisée de toutes les réservations avec recherche, filtrage et actions rapides :
+Fonctionnalité
+Description
+Priorité
+Liste des réservations
+Tableau triable par date, statut, destination ou client
+Haute
+Statuts de réservation
+En attente / Confirmée / Payée / Annulée / Terminée
+Haute
+Fiche réservation détaillée
+Informations client, offre, participants, paiement, historique
+Haute
+Modification manuelle
+L'admin peut modifier une réservation (date, participants, offre)
+Haute
+Annulation & remboursement
+Processus d'annulation avec note de remboursement
+Haute
+Export Excel/PDF
+Export de la liste des réservations pour une période donnée
+Moyenne
+Envoi manuel de rappels
+Envoi d'email ou SMS de rappel à un ou plusieurs clients
+Moyenne
+4.3 Gestion des Clients
+Fonctionnalité
+Description
+Priorité
+Base clients unifiée
+Fiche client complète : infos personnelles, historique, préférences
+Haute
+Recherche & filtres
+Recherche par nom, email, téléphone, date d'inscription
+Haute
+Historique des réservations
+Toutes les réservations passées et à venir par client
+Haute
+Notes internes
+Possibilité d'ajouter des notes privées sur un client (VIP, allergies…)
+Moyenne
+Segmentation
+Tags clients : Fidèle, Nouveau, VIP, Groupe, International
+Moyenne
+Export clients
+Export CSV de la base clients pour usage CRM ou emailing
+Moyenne
+4.4 Gestion des Offres & Disponibilités
+Fonctionnalité
+Description
+Priorité
+Création d'offre
+Formulaire complet : titre, description, prix, dates, capacité max
+Haute
+Galerie médias
+Upload de photos et vidéos par offre avec gestion de l'ordre
+Haute
+Calendrier des sessions
+Vue calendrier avec sessions et taux de remplissage
+Haute
+Gestion des places
+Modification de la capacité, ajout de sessions supplémentaires
+Haute
+Activation / Désactivation
+Mise en ligne ou hors ligne instantanée d'une offre
+Haute
+Promotions & réductions
+Application de codes promo ou réductions par période
+Moyenne
+Duplication d'offre
+Copier une offre existante pour créer rapidement une variante
+Basse
+4.5 Tableau de Bord – Statistiques
+Fonctionnalité
+Description
+Priorité
+Vue d'ensemble (KPIs)
+Réservations du jour, du mois, chiffre d'affaires, taux de remplissage
+Haute
+Graphiques de tendances
+Courbes de réservations sur 7/30/90 jours et comparaison N-1
+Haute
+Destinations populaires
+Classement des offres par nombre de réservations
+Haute
+Taux d'occupation
+Pourcentage de remplissage par offre et par période
+Haute
+Origine des clients
+Répartition géographique et source d'acquisition
+Moyenne
+Rapport mensuel auto
+Génération et envoi automatique d'un rapport PDF mensuel
+Moyenne
+5. Sitemap Complet du Site (Pages par Rôle)
+Cette section recense l'ensemble des pages du site public et du tableau de bord administrateur, ainsi que les droits d'accès par rôle, afin de cadrer précisément le périmètre de développement.
+5.1 Pages du Site Public (Visiteurs)
+Page
+Contenu principal
+Accueil (/)
+Hero vidéo/photo, points forts, offres à la une, avis clients, CTA réservation
+Destinations (/destinations)
+Galerie filtrable de tous les lieux (Gouraya, Tichy, Corniche, Kherrata...)
+Fiche Destination (/destinations/:slug)
+Photos HD, description, carte GPS, météo, avis
+Nos Offres (/offres)
+Liste des packages et excursions avec filtres prix/durée/type
+Fiche Offre (/offres/:slug)
+Détail de l'offre, calendrier de disponibilité, bouton réserver
+Réservation (/reservation)
+Tunnel en 4 étapes : offre → disponibilité → informations → confirmation
+Confirmation (/reservation/confirmation)
+Récapitulatif, numéro de dossier, téléchargement PDF
+Mon Compte (/compte)
+Espace visiteur optionnel : historique et suivi des réservations
+À Propos (/a-propos)
+Histoire de l'agence, équipe, valeurs, engagements
+Galerie (/galerie)
+Médiathèque photos/vidéos de toutes les destinations
+Blog (/blog)
+Liste des articles sur le tourisme à Béjaïa
+Article de Blog (/blog/:slug)
+Contenu de l'article, partage réseaux sociaux
+Contact (/contact)
+Formulaire, carte interactive, coordonnées, horaires
+Mentions Légales / CGU (/legal)
+Conditions générales, politique de confidentialité, cookies
+Page 404 / Erreur
+Page d'erreur personnalisée avec retour à l'accueil
+5.2 Pages du Tableau de Bord Administrateur
+Le dashboard est structuré en modules. L'accès à chaque page dépend du rôle attribué à l'utilisateur (voir tableau des droits en 5.3).
+Page du Dashboard
+Contenu principal
+Connexion / 2FA
+Authentification sécurisée + code OTP
+Vue d'ensemble (KPIs)
+Réservations du jour/mois, chiffre d'affaires, taux de remplissage
+Réservations (liste)
+Tableau triable/filtrable de toutes les réservations
+Fiche Réservation
+Détail client, offre, participants, paiement, historique
+Clients (liste)
+Base clients unifiée avec recherche et segmentation
+Fiche Client
+Infos personnelles, historique, notes internes, tags
+Offres & Disponibilités
+Création/édition d'offres, galerie médias, gestion des places
+Calendrier des Sessions
+Vue calendrier des sessions et taux de remplissage
+Statistiques & Rapports
+Graphiques de tendances, classement des destinations, exports
+Utilisateurs & Rôles
+Gestion des comptes internes et de leurs permissions
+Journal d'Activité
+Historique des actions avec date, heure et utilisateur
+Paramètres Généraux
+Coordonnées, paiement, notifications, langues du site
+5.3 Matrice des Droits d'Accès par Rôle
+Légende : ✔ Accès complet · ● Accès limité (lecture ou périmètre restreint) · — Aucun accès.
+Page
+Super Admin
+Gestionnaire
+Commercial
+Lecteur seul
+Vue d'ensemble (KPIs)
+✔
+✔
+✔
+✔
+Réservations
+✔
+✔
+● (sans suppression)
+● (lecture)
+Clients
+✔
+✔
+● (lecture/notes)
+● (lecture)
+Offres & Disponibilités
+✔
+✔
+—
+● (lecture)
+Statistiques & Rapports
+✔
+✔
+● (ses ventes)
+● (lecture)
+Utilisateurs & Rôles
+✔
+—
+—
+—
+Journal d'Activité
+✔
+● (son périmètre)
+—
+—
+Paramètres Généraux
+✔
+—
+—
+—
+6. Stack Technique Recommandée
+La sélection technique ci-dessous vise trois objectifs : rapidité de mise en marché, robustesse pour les pics de réservation, et facilité de maintenance par une équipe réduite.
+Catégorie
+Technologie
+Justification
+Frontend
+Next.js (React) + TypeScript
+Rendu hybride SSR/SSG idéal pour le SEO des pages destinations/offres, excellentes performances
+UI / Styles
+Tailwind CSS + shadcn/ui
+Système de design cohérent, développement rapide, facile à personnaliser avec la charte GreenVibes
+Backend / API
+Node.js (NestJS) ou Laravel
+Architecture modulaire, sécurité éprouvée, bonne intégration avec les paiements algériens
+Base de données
+PostgreSQL
+Fiable pour les données transactionnelles (réservations, places, paiements)
+Cache / Files
+Redis
+Gestion du compteur de places en temps réel et des files d'attente sans collision
+Authentification
+JWT + OTP (email/SMS)
+Sessions sécurisées côté public et double authentification pour les comptes admin
+Paiement en ligne
+Chargily, CIB, eDahabia
+Passerelles de paiement locales adaptées au marché algérien
+Stockage médias
+Cloudinary ou AWS S3
+Hébergement et optimisation automatique des photos/vidéos HD
+Recherche
+Algolia ou Meilisearch
+Recherche instantanée et filtrage des destinations/offres
+Emailing / SMS
+SendGrid / Mailgun + Twilio
+Confirmations automatiques, rappels et notifications
+Hébergement
+Vercel (frontend) + AWS/OVH (API & BDD)
+Scalabilité automatique, hébergement de données en conformité locale
+Internationalisation
+next-intl / i18next
+Interface multilingue Arabe, Français, Anglais
+SEO technique
+next-seo, sitemap.xml, schema.org
+Référencement naturel optimisé pour le tourisme local
+Analytics
+Google Analytics 4 + Hotjar
+Suivi du comportement visiteurs et optimisation du tunnel de réservation
+CI/CD
+GitHub Actions
+Déploiement automatisé et tests avant mise en production
+Monitoring
+Sentry + UptimeRobot
+Détection proactive des erreurs et surveillance de la disponibilité
+7. Architecture & Layout Recommandés
+Le layout ci-dessous garantit une lecture claire de l'information et une hiérarchie visuelle forte, tout en restant cohérent sur toutes les pages du site.
+7.1 Structure Type d'une Page Publique
+Zone
+Contenu / Rôle
+En-tête (Header)
+Logo GreenVibes, navigation sticky, sélecteur de langue, bouton « Réserver » en accent
+Section Hero
+Visuel plein écran (photo/vidéo Béjaïa), slogan, barre de recherche/CTA de réservation
+Sections de contenu
+Grille 12 colonnes : 3 colonnes desktop, 2 tablette, 1 mobile pour les cartes destinations/offres
+Bandeau de réassurance
+Points de confiance : paiement sécurisé, avis clients, support multilingue
+Appel à l'action
+Bloc contrasté incitant à réserver ou consulter les offres du moment
+Pied de page (Footer)
+4 colonnes : à propos, liens rapides, contact, réseaux sociaux + mentions légales
+7.2 Grille & Points de Rupture (Breakpoints)
+Appareil
+Largeur
+Comportement
+Mobile
+< 768 px
+1 colonne, menu hamburger, cartes empilées, boutons pleine largeur
+Tablette
+768 – 1024 px
+2 colonnes, calendrier condensé, navigation simplifiée
+Desktop
+1024 – 1440 px
+3 à 4 colonnes, galeries en grille, dashboard étendu
+Grand écran
+> 1440 px
+Conteneur centré max. 1280 px pour éviter les lignes de texte trop longues
+7.3 Structure Type du Dashboard Administrateur
+Barre latérale (sidebar) fixe avec accès aux modules selon le rôle connecté
+Barre supérieure avec recherche globale, notifications et profil utilisateur
+Zone de contenu en cartes/KPIs en haut de chaque page, tableau détaillé en dessous
+Actions rapides (créer, exporter, filtrer) regroupées en haut à droite de chaque tableau
+Design condensé mais lisible, optimisé pour un usage prolongé par l'équipe interne
+8. Recommandations pour un Design Web Professionnel
+Ces bonnes pratiques garantissent un rendu final crédible, moderne et à la hauteur d'une agence touristique haut de gamme.
+Principe
+Description
+Priorité
+Hiérarchie visuelle claire
+Un seul message fort par écran ; taille et contraste des titres qui guident l'œil naturellement vers le CTA
+Haute
+Cohérence du design system
+Composants réutilisables (boutons, cartes, badges) avec les mêmes rayons, ombres et espacements partout
+Haute
+Photographie de qualité
+Utiliser uniquement des visuels HD authentiques de Béjaïa, retouchés dans une teinte cohérente avec la charte
+Haute
+Espaces blancs généreux
+Ne pas surcharger les sections ; laisser respirer le contenu pour un rendu premium
+Haute
+Contraste et accessibilité
+Respect du niveau AA du WCAG (contraste texte/fond, tailles de police lisibles dès 16px)
+Haute
+Micro-interactions soignées
+Animations légères au survol/scroll (fade-in, hover sur cartes) sans nuire à la performance
+Moyenne
+Vitesse de chargement
+Images optimisées (WebP/AVIF), lazy loading, score Core Web Vitals au vert
+Haute
+Call-to-action visibles
+Boutons d'action toujours dans la couleur d'accent, jamais noyés dans le reste de l'interface
+Haute
+Signaux de confiance
+Avis clients, logos des moyens de paiement, badges de sécurité visibles près du tunnel de réservation
+Moyenne
+Cohérence mobile-first
+Concevoir d'abord pour mobile puis enrichir progressivement pour tablette et desktop
+Haute
+Ton éditorial harmonisé
+Textes courts, chaleureux et authentiques, alignés avec l'identité nature/évasion de GreenVibes
+Moyenne
+Tests utilisateurs réguliers
+Tests A/B sur le tunnel de réservation pour maximiser le taux de conversion
+Basse
+8.1 Palette Appliquée à l'Interface
+Vert Forêt #2D6A4F : en-têtes, boutons principaux, éléments de navigation actifs
+Vert Clair #52B788 : accents, icônes, liens au survol, bordures décoratives
+Vert Pastel #D8F3DC : fonds de sections secondaires, badges de disponibilité
+Sable #F8F0E3 : fond général des pages pour une ambiance chaleureuse et naturelle
+8.2 Livrables Design Attendus
+Maquettes Figma haute-fidélité (mobile, tablette, desktop) pour chaque page listée en section 5
+Design system documenté : couleurs, typographies, composants, espacements, icônes
+Prototype interactif du tunnel de réservation pour validation avant développement
+Guide de style pour l'équipe GreenVibes (usage du logo, ton éditorial, visuels autorisés)
+🌿  GreenVibes Agency – Béjaïa, Algérie  |  Tourisme Authentique & Responsable  🌿
+Document confidentiel – tous droits réservés © 2025
