@@ -32,3 +32,6 @@ supabase/.branches/
 
 # Vite
 .vite/
+
+# TanStack Router codegen cache
+.tanstack/
