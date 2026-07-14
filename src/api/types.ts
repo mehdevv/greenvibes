@@ -181,3 +181,49 @@ export interface CreateBookingResult {
   status: BookingStatus;
   totalPriceDzd: number;
 }
+
+/** v2 — simplified trip model (cahier des charges) */
+export type ReservationStatus = "confirmed" | "waitlisted" | "cancelled";
+
+export interface Trip {
+  id: string;
+  title: string;
+  description: string;
+  photoUrl: string | null;
+  meetingPoint: string;
+  includes: string[];
+  price: number;
+  duration: string;
+  capacity: number;
+  spotsTaken: number;
+  active: boolean;
+  createdAt: string;
+}
+
+export interface Reservation {
+  id: string;
+  tripId: string;
+  bookingRef: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  location: string;
+  status: ReservationStatus;
+  createdAt: string;
+  trip?: Trip | null;
+}
+
+export interface CreateReservationInput {
+  tripId: string;
+  firstName: string;
+  lastName: string;
+  phone: string;
+  location: string;
+}
+
+export interface CreateReservationResult {
+  reservationId: string;
+  bookingRef: string;
+  status: ReservationStatus;
+  spotsRemaining: number;
+}

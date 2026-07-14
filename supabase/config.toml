@@ -6,3 +6,17 @@ enabled = true
 
 [db]
 major_version = 15
+
+# Edge Functions — callable from the browser with your public (anon/publishable) key
+[functions.setup-admin]
+verify_jwt = false
+
+[functions.create-reservation]
+verify_jwt = false
+
+[functions.send-reservation-notification]
+verify_jwt = false
+
+# Legacy v1 booking emails (optional)
+[functions.send-booking-confirmation]
+verify_jwt = true

@@ -9,3 +9,5 @@ export * from "./blog";
 export * from "./gallery";
 export * from "./contact";
 export * from "./analytics";
+export * from "./trips";
+export * from "./reservations";

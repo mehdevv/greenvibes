@@ -1,74 +1,65 @@
 import { Link } from "@tanstack/react-router";
-import { DEFAULT_OFFRES_SEARCH } from "@/lib/constants";
+import { AGENCY_CONTACT, DEFAULT_OFFRES_SEARCH } from "@/lib/constants";
 import { Instagram, Facebook, MapPin, Phone, Mail } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Reveal, Stagger, StaggerItem } from "@/components/motion";
 
 export function PublicFooter() {
   return (
-    <footer className="relative z-10 border-t border-border bg-card/90 backdrop-blur-sm">
-      <div className="mx-auto grid max-w-7xl gap-10 px-6 py-14 md:grid-cols-5">
+    <footer className="relative z-10 bg-[var(--dark)] text-white">
+      <div className="shopify-container grid gap-12 py-16 md:grid-cols-4 md:py-20">
         <Reveal className="md:col-span-2">
-          <Logo size="md" showText text="GreenVibes Agency" textClassName="text-forest" />
-          <p className="mt-4 max-w-sm text-sm text-muted-foreground">
-            Agence de tourisme authentique et responsable, basée à Béjaïa. Circuits et séjours dans toute
-            l&apos;Algérie.
+          <Logo size="md" showText text="GreenVibes Agency" textClassName="text-white" />
+          <p className="mt-5 max-w-sm text-sm leading-relaxed text-white/70">
+            Sorties fun et escapades en Algérie — basés à Béjaïa. Choisissez une offre, réservez
+            en deux minutes.
           </p>
-          <Stagger className="mt-5 flex items-center gap-3">
-            {[Instagram, Facebook].map((Icon, i) => (
-              <StaggerItem key={i}>
-                <a
-                  href="#"
-                  className="flex h-9 w-9 items-center justify-center rounded-[4px] bg-secondary text-forest transition hover:bg-forest hover:text-primary-foreground"
-                >
-                  <Icon className="h-4 w-4" />
-                </a>
-              </StaggerItem>
-            ))}
+          <Stagger className="mt-6 flex items-center gap-3">
+            <StaggerItem>
+              <a
+                href={AGENCY_CONTACT.instagram}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-leaf hover:text-white"
+              >
+                <Instagram className="h-4 w-4" />
+              </a>
+            </StaggerItem>
+            <StaggerItem>
+              <a
+                href={AGENCY_CONTACT.facebook}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Facebook"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-leaf hover:text-white"
+              >
+                <Facebook className="h-4 w-4" />
+              </a>
+            </StaggerItem>
           </Stagger>
         </Reveal>
 
         <Reveal delay={0.1}>
-          <div className="text-sm font-medium text-forest">Explorer</div>
-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+          <div className="text-sm font-medium text-leaf">Explorer</div>
+          <ul className="mt-5 space-y-3 text-sm text-white/70">
             <li>
-              <Link to="/destinations" className="hover:text-forest">
-                Destinations
+              <Link to="/offres" search={DEFAULT_OFFRES_SEARCH} className="hover:text-white">
+                Sorties
               </Link>
             </li>
             <li>
-              <Link to="/offres" search={DEFAULT_OFFRES_SEARCH} className="hover:text-forest">
-                Circuits & offres
-              </Link>
-            </li>
-            <li>
-              <Link to="/galerie" className="hover:text-forest">
-                Galerie
-              </Link>
-            </li>
-            <li>
-              <a href="/#services" className="hover:text-forest">
-                Nos services
-              </a>
-            </li>
-          </ul>
-        </Reveal>
-
-        <Reveal delay={0.12}>
-          <div className="text-sm font-medium text-forest">Informations</div>
-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
-            <li>
-              <Link to="/a-propos" className="hover:text-forest">
+              <Link to="/a-propos" className="hover:text-white">
                 À propos
               </Link>
             </li>
             <li>
-              <Link to="/blog" className="hover:text-forest">
-                Blog
+              <Link to="/galerie" className="hover:text-white">
+                Galerie
               </Link>
             </li>
             <li>
-              <Link to="/contact" className="hover:text-forest">
+              <Link to="/contact" className="hover:text-white">
                 Contact
               </Link>
             </li>
@@ -76,24 +67,27 @@ export function PublicFooter() {
         </Reveal>
 
         <Reveal delay={0.15}>
-          <div className="text-sm font-medium text-forest">Contact</div>
-          <ul className="mt-4 space-y-2 text-sm text-muted-foreground">
+          <div className="text-sm font-medium text-leaf">Contact</div>
+          <ul className="mt-5 space-y-3 text-sm text-white/70">
             <li className="flex items-center gap-2">
-              <MapPin className="h-4 w-4" /> Béjaïa, Algérie
+              <MapPin className="h-4 w-4 shrink-0 text-leaf" /> {AGENCY_CONTACT.address}
             </li>
             <li className="flex items-center gap-2">
-              <Phone className="h-4 w-4" /> +213 (0)00 00 00 00
+              <a href={`tel:${AGENCY_CONTACT.phone}`} className="hover:text-white">
+                <Phone className="mr-2 inline h-4 w-4 shrink-0 text-leaf" />
+                {AGENCY_CONTACT.phoneDisplay}
+              </a>
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4" /> hello@greenvibes.dz
+              <Mail className="h-4 w-4 shrink-0 text-leaf" /> hello@greenvibes.dz
             </li>
           </ul>
         </Reveal>
       </div>
       <Reveal delay={0.05}>
-        <div className="border-t border-border">
-          <div className="mx-auto max-w-7xl px-6 py-5 text-xs text-muted-foreground">
-            © {new Date().getFullYear()} GreenVibes Agency — Tourisme authentique & responsable.
+        <div className="border-t border-white/10">
+          <div className="shopify-container py-6 text-xs text-white/50">
+            © {new Date().getFullYear()} GreenVibes Agency — Sorties fun en Algérie.
           </div>
         </div>
       </Reveal>

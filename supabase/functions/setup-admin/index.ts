@@ -1,9 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
-};
+import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -14,10 +10,7 @@ Deno.serve(async (req) => {
     const { email, password, fullName } = await req.json();
 
     if (!email || !password || !fullName) {
-      return new Response(JSON.stringify({ error: "Champs requis manquants" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Champs requis manquants" }, 400);
     }
 
     const supabase = createClient(
@@ -30,10 +23,7 @@ Deno.serve(async (req) => {
       .select("id", { count: "exact", head: true });
 
     if ((count ?? 0) > 0) {
-      return new Response(JSON.stringify({ error: "Un administrateur existe déjà" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: "Un administrateur existe déjà" }, 400);
     }
 
     const { data: authData, error: authError } = await supabase.auth.admin.createUser({
@@ -43,10 +33,7 @@ Deno.serve(async (req) => {
     });
 
     if (authError || !authData.user) {
-      return new Response(JSON.stringify({ error: authError?.message ?? "Création échouée" }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: authError?.message ?? "Création échouée" }, 400);
     }
 
     const { error: profileError } = await supabase.from("admin_profiles").insert({
@@ -57,19 +44,11 @@ Deno.serve(async (req) => {
     });
 
     if (profileError) {
-      return new Response(JSON.stringify({ error: profileError.message }), {
-        status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
+      return jsonResponse({ error: profileError.message }, 400);
     }
 
-    return new Response(JSON.stringify({ ok: true }), {
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ ok: true });
   } catch (err) {
-    return new Response(JSON.stringify({ error: String(err) }), {
-      status: 500,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
-    });
+    return jsonResponse({ error: err instanceof Error ? err.message : String(err) }, 500);
   }
 });

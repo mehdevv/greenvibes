@@ -20,9 +20,11 @@ import { Route as OffresIndexRouteImport } from './routes/offres/index'
 import { Route as DestinationsIndexRouteImport } from './routes/destinations/index'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as ReservationTripIdRouteImport } from './routes/reservation/$tripId'
 import { Route as OffresSlugRouteImport } from './routes/offres/$slug'
 import { Route as DestinationsSlugRouteImport } from './routes/destinations/$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
+import { Route as AdminTripsRouteImport } from './routes/admin/trips'
 import { Route as AdminSessionsRouteImport } from './routes/admin/sessions'
 import { Route as AdminReservationsRouteImport } from './routes/admin/reservations'
 import { Route as AdminMessagesRouteImport } from './routes/admin/messages'
@@ -95,6 +97,11 @@ const AdminIndexRoute = AdminIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const ReservationTripIdRoute = ReservationTripIdRouteImport.update({
+  id: '/reservation/$tripId',
+  path: '/reservation/$tripId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffresSlugRoute = OffresSlugRouteImport.update({
   id: '/offres/$slug',
   path: '/offres/$slug',
@@ -109,6 +116,11 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   id: '/blog/$slug',
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminTripsRoute = AdminTripsRouteImport.update({
+  id: '/trips',
+  path: '/trips',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminSessionsRoute = AdminSessionsRouteImport.update({
   id: '/sessions',
@@ -213,9 +225,11 @@ export interface FileRoutesByFullPath {
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/sessions': typeof AdminSessionsRoute
+  '/admin/trips': typeof AdminTripsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
   '/offres/$slug': typeof OffresSlugRoute
+  '/reservation/$tripId': typeof ReservationTripIdRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/destinations/': typeof DestinationsIndexRoute
@@ -244,9 +258,11 @@ export interface FileRoutesByTo {
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/sessions': typeof AdminSessionsRoute
+  '/admin/trips': typeof AdminTripsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
   '/offres/$slug': typeof OffresSlugRoute
+  '/reservation/$tripId': typeof ReservationTripIdRoute
   '/admin': typeof AdminIndexRoute
   '/blog': typeof BlogIndexRoute
   '/destinations': typeof DestinationsIndexRoute
@@ -277,9 +293,11 @@ export interface FileRoutesById {
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/sessions': typeof AdminSessionsRoute
+  '/admin/trips': typeof AdminTripsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
   '/offres/$slug': typeof OffresSlugRoute
+  '/reservation/$tripId': typeof ReservationTripIdRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/destinations/': typeof DestinationsIndexRoute
@@ -311,9 +329,11 @@ export interface FileRouteTypes {
     | '/admin/messages'
     | '/admin/reservations'
     | '/admin/sessions'
+    | '/admin/trips'
     | '/blog/$slug'
     | '/destinations/$slug'
     | '/offres/$slug'
+    | '/reservation/$tripId'
     | '/admin/'
     | '/blog/'
     | '/destinations/'
@@ -342,9 +362,11 @@ export interface FileRouteTypes {
     | '/admin/messages'
     | '/admin/reservations'
     | '/admin/sessions'
+    | '/admin/trips'
     | '/blog/$slug'
     | '/destinations/$slug'
     | '/offres/$slug'
+    | '/reservation/$tripId'
     | '/admin'
     | '/blog'
     | '/destinations'
@@ -374,9 +396,11 @@ export interface FileRouteTypes {
     | '/admin/messages'
     | '/admin/reservations'
     | '/admin/sessions'
+    | '/admin/trips'
     | '/blog/$slug'
     | '/destinations/$slug'
     | '/offres/$slug'
+    | '/reservation/$tripId'
     | '/admin/'
     | '/blog/'
     | '/destinations/'
@@ -401,6 +425,7 @@ export interface RootRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
   DestinationsSlugRoute: typeof DestinationsSlugRoute
   OffresSlugRoute: typeof OffresSlugRoute
+  ReservationTripIdRoute: typeof ReservationTripIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
   DestinationsIndexRoute: typeof DestinationsIndexRoute
   OffresIndexRoute: typeof OffresIndexRoute
@@ -487,6 +512,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminIndexRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/reservation/$tripId': {
+      id: '/reservation/$tripId'
+      path: '/reservation/$tripId'
+      fullPath: '/reservation/$tripId'
+      preLoaderRoute: typeof ReservationTripIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offres/$slug': {
       id: '/offres/$slug'
       path: '/offres/$slug'
@@ -507,6 +539,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/blog/$slug'
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/admin/trips': {
+      id: '/admin/trips'
+      path: '/trips'
+      fullPath: '/admin/trips'
+      preLoaderRoute: typeof AdminTripsRouteImport
+      parentRoute: typeof AdminRouteRoute
     }
     '/admin/sessions': {
       id: '/admin/sessions'
@@ -675,6 +714,7 @@ interface AdminRouteRouteChildren {
   AdminMessagesRoute: typeof AdminMessagesRoute
   AdminReservationsRoute: typeof AdminReservationsRoute
   AdminSessionsRoute: typeof AdminSessionsRoute
+  AdminTripsRoute: typeof AdminTripsRoute
   AdminIndexRoute: typeof AdminIndexRoute
   AdminOffresIdRoute: typeof AdminOffresIdRoute
   AdminOffresNouveauRoute: typeof AdminOffresNouveauRoute
@@ -691,6 +731,7 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminMessagesRoute: AdminMessagesRoute,
   AdminReservationsRoute: AdminReservationsRoute,
   AdminSessionsRoute: AdminSessionsRoute,
+  AdminTripsRoute: AdminTripsRoute,
   AdminIndexRoute: AdminIndexRoute,
   AdminOffresIdRoute: AdminOffresIdRoute,
   AdminOffresNouveauRoute: AdminOffresNouveauRoute,
@@ -711,6 +752,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
   DestinationsSlugRoute: DestinationsSlugRoute,
   OffresSlugRoute: OffresSlugRoute,
+  ReservationTripIdRoute: ReservationTripIdRoute,
   BlogIndexRoute: BlogIndexRoute,
   DestinationsIndexRoute: DestinationsIndexRoute,
   OffresIndexRoute: OffresIndexRoute,

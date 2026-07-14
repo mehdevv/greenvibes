@@ -2,13 +2,8 @@ import { Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/r
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import {
   LayoutDashboard,
-  MapPin,
   Package,
-  Calendar,
-  Users,
   BookOpen,
-  Image,
-  MessageSquare,
   LogOut,
   Menu,
 } from "lucide-react";
@@ -36,13 +31,7 @@ export const Route = createFileRoute("/admin")({
 const navItems = [
   { to: "/admin/dashboard", label: "Tableau de bord", icon: LayoutDashboard },
   { to: "/admin/reservations", label: "Réservations", icon: BookOpen },
-  { to: "/admin/clients", label: "Clients", icon: Users },
-  { to: "/admin/destinations", label: "Destinations", icon: MapPin },
-  { to: "/admin/offres", label: "Offres", icon: Package },
-  { to: "/admin/sessions", label: "Sessions", icon: Calendar },
-  { to: "/admin/blog", label: "Blog", icon: BookOpen },
-  { to: "/admin/galerie", label: "Galerie", icon: Image },
-  { to: "/admin/messages", label: "Messages", icon: MessageSquare },
+  { to: "/admin/trips", label: "Voyages", icon: Package },
 ] as const;
 
 function AdminLayout() {

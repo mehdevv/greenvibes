@@ -80,4 +80,19 @@ export const WILAYAS = [
   { slug: "medea", name: "Médéa", code: "26" },
 ] as const;
 
-export type Wilaya = (typeof WILAYAS)[number];
+export const AGENCY_CONTACT = {
+  phone: "+213559841220",
+  phoneDisplay: "05 59 84 12 20",
+  instagram: "https://www.instagram.com/gree.n_vibes/",
+  facebook: "https://www.facebook.com/p/green-vibes-100093088322983/",
+  name: "GreenVibes",
+  address: "Green travel, Béjaïa, Algérie",
+  mapsEmbedUrl:
+    "https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3197.0822324748215!2d5.0512192!3d36.7445972!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x128d33a4692db581%3A0x62f933528f31a9d4!2sGreen%20travel!5e0!3m2!1sen!2sdz!4v1783983696600!5m2!1sen!2sdz",
+  mapsLink: "https://maps.google.com/?q=Green+travel+Béjaïa",
+  whatsapp: "https://wa.me/213559841220",
+  whatsappMessage:
+    "Bonjour GreenVibes ! Je souhaite avoir des infos sur vos sorties.",
+} as const;
+
+export { tripAvailabilityLabel, tripAvailabilityBarColor, tripSpotsRemaining } from "./availability";

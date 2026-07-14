@@ -1,0 +1,437 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
+import { useReducedMotion } from "framer-motion";
+import { cn } from "@/lib/utils";
+
+const EDGE_PADDING = "max(1.25rem, calc((100vw - 80rem) / 2 + 1.25rem))";
+const RESUME_DELAY = 4500;
+const DRAG_THRESHOLD = 4;
+const FLICK_VELOCITY = 0.35;
+
+type HorizontalScrollProps = {
+  children: ReactNode;
+  className?: string;
+  autoScrollInterval?: number;
+  showDots?: boolean;
+  itemCount?: number;
+  "aria-label"?: string;
+};
+
+export function HorizontalScroll({
+  children,
+  className,
+  autoScrollInterval = 3000,
+  showDots = true,
+  itemCount = 0,
+  "aria-label": ariaLabel = "Défilement horizontal",
+}: HorizontalScrollProps) {
+  const trackRef = useRef<HTMLDivElement>(null);
+  const reduceMotion = useReducedMotion();
+
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const draggingRef = useRef(false);
+
+  const pausedRef = useRef(false);
+  const inViewRef = useRef(true);
+  const resumeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const autoScrollEnabled = autoScrollInterval > 0 && !reduceMotion;
+
+  const getGap = useCallback((el: HTMLElement) => {
+    const gap = parseFloat(getComputedStyle(el).columnGap || "0");
+    return Number.isNaN(gap) ? 24 : gap;
+  }, []);
+
+  const stepWidth = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return 0;
+    const item = el.querySelector<HTMLElement>("[data-scroll-item]");
+    return item ? item.offsetWidth + getGap(el) : el.clientWidth * 0.85;
+  }, [getGap]);
+
+  const maxIndex = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return 0;
+    const step = stepWidth();
+    if (step <= 0) return 0;
+    return Math.max(0, Math.round((el.scrollWidth - el.clientWidth) / step));
+  }, [stepWidth]);
+
+  const measure = useCallback(() => {
+    const el = trackRef.current;
+    if (!el) return;
+    const { scrollLeft, scrollWidth, clientWidth } = el;
+    const maxScroll = scrollWidth - clientWidth;
+    setCanScrollLeft(scrollLeft > 4);
+    setCanScrollRight(scrollLeft < maxScroll - 4);
+
+    const step = stepWidth();
+    setActiveIndex(step > 0 ? Math.round(scrollLeft / step) : 0);
+  }, [stepWidth]);
+
+  const scrollToIndex = useCallback(
+    (index: number, smooth = true) => {
+      const el = trackRef.current;
+      if (!el) return;
+      const clamped = Math.max(0, Math.min(index, maxIndex()));
+      el.scrollTo({
+        left: clamped * stepWidth(),
+        behavior: smooth && !reduceMotion ? "smooth" : "auto",
+      });
+    },
+    [stepWidth, maxIndex, reduceMotion],
+  );
+
+  const scrollByPage = useCallback(
+    (direction: -1 | 1) => {
+      scrollToIndex(activeIndex + direction);
+    },
+    [activeIndex, scrollToIndex],
+  );
+
+  const snapToNearest = useCallback(
+    (velocity = 0) => {
+      const el = trackRef.current;
+      if (!el) return;
+      const step = stepWidth();
+      if (step <= 0) return;
+
+      let index = Math.round(el.scrollLeft / step);
+      if (Math.abs(velocity) > FLICK_VELOCITY) {
+        index += velocity < 0 ? 1 : -1;
+      }
+      scrollToIndex(index);
+    },
+    [scrollToIndex, stepWidth],
+  );
+
+  const pauseAutoScroll = useCallback(() => {
+    pausedRef.current = true;
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+  }, []);
+
+  const scheduleResume = useCallback(() => {
+    if (resumeTimer.current) clearTimeout(resumeTimer.current);
+    resumeTimer.current = setTimeout(() => {
+      pausedRef.current = false;
+    }, RESUME_DELAY);
+  }, []);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    measure();
+
+    const onScroll = () => measure();
+    el.addEventListener("scroll", onScroll, { passive: true });
+
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    Array.from(el.children).forEach((child) => ro.observe(child));
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        inViewRef.current = entry.isIntersecting;
+      },
+      { threshold: 0.2 },
+    );
+    io.observe(el);
+
+    return () => {
+      el.removeEventListener("scroll", onScroll);
+      ro.disconnect();
+      io.disconnect();
+    };
+  }, [measure, children]);
+
+  useEffect(() => {
+    const el = trackRef.current;
+    if (!el) return;
+
+    const onWheel = (e: WheelEvent) => {
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+      const absX = Math.abs(e.deltaX);
+      const absY = Math.abs(e.deltaY);
+      if (absX <= absY || e.deltaX === 0) return;
+      e.preventDefault();
+      el.scrollLeft += e.deltaX;
+      pauseAutoScroll();
+      scheduleResume();
+    };
+
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "ArrowLeft") {
+        e.preventDefault();
+        scrollByPage(-1);
+        pauseAutoScroll();
+        scheduleResume();
+      }
+      if (e.key === "ArrowRight") {
+        e.preventDefault();
+        scrollByPage(1);
+        pauseAutoScroll();
+        scheduleResume();
+      }
+    };
+
+    let isDown = false;
+    let moved = false;
+    let startX = 0;
+    let startScroll = 0;
+    let lastX = 0;
+    let lastTime = 0;
+    let velocity = 0;
+
+    const onPointerDown = (e: PointerEvent) => {
+      pauseAutoScroll();
+      if (e.button !== 0) return;
+      isDown = true;
+      moved = false;
+      startX = e.clientX;
+      lastX = e.clientX;
+      lastTime = performance.now();
+      velocity = 0;
+      startScroll = el.scrollLeft;
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!isDown) return;
+      const dx = e.clientX - startX;
+      const now = performance.now();
+      const dt = now - lastTime;
+      if (dt > 0) {
+        velocity = (e.clientX - lastX) / dt;
+      }
+      lastX = e.clientX;
+      lastTime = now;
+
+      if (!moved && Math.abs(dx) > DRAG_THRESHOLD) {
+        moved = true;
+        setDragging(true);
+        draggingRef.current = true;
+        if (e.pointerType === "mouse") {
+          try {
+            el.setPointerCapture(e.pointerId);
+          } catch {
+            /* ignore */
+          }
+        }
+      }
+
+      if (moved) {
+        if (e.pointerType === "mouse") e.preventDefault();
+        el.scrollLeft = startScroll - dx;
+      }
+    };
+
+    const endDrag = () => {
+      if (!isDown) return;
+      isDown = false;
+      setDragging(false);
+      draggingRef.current = false;
+      if (moved) snapToNearest(velocity);
+      scheduleResume();
+    };
+
+    const onClickCapture = (e: MouseEvent) => {
+      if (moved) {
+        e.preventDefault();
+        e.stopPropagation();
+        moved = false;
+      }
+    };
+
+    let scrollEndTimer: ReturnType<typeof setTimeout>;
+    const onScrollEnd = () => {
+      clearTimeout(scrollEndTimer);
+      scrollEndTimer = setTimeout(() => {
+        if (!draggingRef.current && !isDown) measure();
+      }, 80);
+    };
+
+    el.addEventListener("wheel", onWheel, { passive: false });
+    el.addEventListener("keydown", onKeyDown);
+    el.addEventListener("pointerdown", onPointerDown);
+    el.addEventListener("scroll", onScrollEnd, { passive: true });
+    window.addEventListener("pointermove", onPointerMove, { passive: false });
+    window.addEventListener("pointerup", endDrag);
+    window.addEventListener("pointercancel", endDrag);
+    el.addEventListener("click", onClickCapture, true);
+
+    return () => {
+      el.removeEventListener("wheel", onWheel);
+      el.removeEventListener("keydown", onKeyDown);
+      el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("scroll", onScrollEnd);
+      window.removeEventListener("pointermove", onPointerMove);
+      window.removeEventListener("pointerup", endDrag);
+      window.removeEventListener("pointercancel", endDrag);
+      el.removeEventListener("click", onClickCapture, true);
+      clearTimeout(scrollEndTimer);
+    };
+  }, [pauseAutoScroll, scheduleResume, scrollByPage, snapToNearest, measure]);
+
+  useEffect(() => {
+    if (!autoScrollEnabled) return;
+    const el = trackRef.current;
+    if (!el) return;
+
+    const id = setInterval(() => {
+      if (pausedRef.current || !inViewRef.current || document.hidden) return;
+      if (el.scrollWidth <= el.clientWidth + 1) return;
+
+      const next = activeIndex >= maxIndex() ? 0 : activeIndex + 1;
+      scrollToIndex(next);
+    }, autoScrollInterval);
+
+    return () => clearInterval(id);
+  }, [
+    autoScrollEnabled,
+    autoScrollInterval,
+    scrollToIndex,
+    activeIndex,
+    maxIndex,
+  ]);
+
+  const dots = useMemo(
+    () => (itemCount > 0 ? Array.from({ length: itemCount }) : []),
+    [itemCount],
+  );
+
+  return (
+    <div
+      className={cn("relative", className)}
+      onMouseEnter={pauseAutoScroll}
+      onMouseLeave={scheduleResume}
+      onFocusCapture={pauseAutoScroll}
+      onBlurCapture={scheduleResume}
+    >
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-0 z-10 hidden w-20 bg-gradient-to-r from-sand via-sand/80 to-transparent transition-opacity duration-300 md:block",
+          canScrollLeft ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden
+      />
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-y-0 right-0 z-10 hidden w-20 bg-gradient-to-l from-sand via-sand/80 to-transparent transition-opacity duration-300 md:block",
+          canScrollRight ? "opacity-100" : "opacity-0",
+        )}
+        aria-hidden
+      />
+
+      <button
+        type="button"
+        onClick={() => {
+          scrollByPage(-1);
+          pauseAutoScroll();
+          scheduleResume();
+        }}
+        disabled={!canScrollLeft}
+        aria-label="Voir les offres précédentes"
+        className={cn(
+          "absolute left-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-forest shadow-md ring-1 ring-border/50 transition duration-300 md:flex",
+          "hover:scale-105 hover:bg-mint active:scale-95",
+          canScrollLeft ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        <ChevronLeft className="h-5 w-5" />
+      </button>
+
+      <button
+        type="button"
+        onClick={() => {
+          scrollByPage(1);
+          pauseAutoScroll();
+          scheduleResume();
+        }}
+        disabled={!canScrollRight}
+        aria-label="Voir les offres suivantes"
+        className={cn(
+          "absolute right-3 top-1/2 z-20 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full bg-white text-forest shadow-md ring-1 ring-border/50 transition duration-300 md:flex",
+          "hover:scale-105 hover:bg-mint active:scale-95",
+          canScrollRight ? "opacity-100" : "pointer-events-none opacity-0",
+        )}
+      >
+        <ChevronRight className="h-5 w-5" />
+      </button>
+
+      <div
+        ref={trackRef}
+        role="region"
+        aria-label={ariaLabel}
+        tabIndex={0}
+        className={cn(
+          "flex gap-5 overflow-x-auto overscroll-x-contain pb-4 pt-1 outline-none sm:gap-6",
+          "touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+          dragging
+            ? "cursor-grabbing snap-none scroll-auto select-none"
+            : "cursor-grab snap-x snap-mandatory scroll-smooth",
+        )}
+        style={{
+          paddingLeft: EDGE_PADDING,
+          paddingRight: EDGE_PADDING,
+          scrollPaddingLeft: EDGE_PADDING,
+          scrollPaddingRight: EDGE_PADDING,
+          WebkitOverflowScrolling: "touch",
+        }}
+      >
+        {children}
+      </div>
+
+      {showDots && dots.length > 1 && (
+        <div className="mt-5 flex items-center justify-center gap-2">
+          {dots.map((_, i) => (
+            <button
+              key={i}
+              type="button"
+              aria-label={`Aller à l'offre ${i + 1}`}
+              aria-current={i === activeIndex}
+              onClick={() => {
+                scrollToIndex(i);
+                pauseAutoScroll();
+                scheduleResume();
+              }}
+              className={cn(
+                "h-2 rounded-full transition-all duration-300",
+                i === activeIndex ? "w-7 bg-coral" : "w-2 bg-forest/25 hover:bg-forest/40",
+              )}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export function HorizontalScrollItem({
+  children,
+  className,
+}: {
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <div
+      data-scroll-item
+      className={cn(
+        "w-[min(88vw,360px)] shrink-0 snap-center sm:w-[380px]",
+        className,
+      )}
+    >
+      {children}
+    </div>
+  );
+}
