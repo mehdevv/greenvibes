@@ -13,7 +13,9 @@ import { cn } from "@/lib/utils";
 const EDGE_PADDING = "max(1.25rem, calc((100vw - 80rem) / 2 + 1.25rem))";
 const RESUME_DELAY = 4500;
 const DRAG_THRESHOLD = 4;
-const FLICK_VELOCITY = 0.35;
+const MOMENTUM_FRICTION = 0.94;
+const MOMENTUM_MAX_VELOCITY = 3;
+const MOMENTUM_MIN_VELOCITY = 0.02;
 
 type HorizontalScrollProps = {
   children: ReactNode;
@@ -39,7 +41,9 @@ export function HorizontalScroll({
   const [canScrollRight, setCanScrollRight] = useState(false);
   const [activeIndex, setActiveIndex] = useState(0);
   const [dragging, setDragging] = useState(false);
+  const [settling, setSettling] = useState(false);
   const draggingRef = useRef(false);
+  const momentumRef = useRef<number | null>(null);
 
   const pausedRef = useRef(false);
   const inViewRef = useRef(true);
@@ -99,20 +103,51 @@ export function HorizontalScroll({
     [activeIndex, scrollToIndex],
   );
 
-  const snapToNearest = useCallback(
-    (velocity = 0) => {
+  const stopMomentum = useCallback(() => {
+    if (momentumRef.current != null) {
+      cancelAnimationFrame(momentumRef.current);
+      momentumRef.current = null;
+    }
+  }, []);
+
+  const startMomentum = useCallback(
+    (pointerVelocity: number) => {
       const el = trackRef.current;
       if (!el) return;
-      const step = stepWidth();
-      if (step <= 0) return;
 
-      let index = Math.round(el.scrollLeft / step);
-      if (Math.abs(velocity) > FLICK_VELOCITY) {
-        index += velocity < 0 ? 1 : -1;
+      stopMomentum();
+
+      // pointerVelocity is px/ms (positive = moving right → scrollLeft decreases)
+      let velocity = Math.max(
+        -MOMENTUM_MAX_VELOCITY,
+        Math.min(MOMENTUM_MAX_VELOCITY, pointerVelocity),
+      );
+
+      if (Math.abs(velocity) < MOMENTUM_MIN_VELOCITY) {
+        setSettling(false);
+        return;
       }
-      scrollToIndex(index);
+
+      const maxScroll = el.scrollWidth - el.clientWidth;
+      setSettling(true);
+
+      const frame = () => {
+        el.scrollLeft -= velocity * 16;
+        velocity *= MOMENTUM_FRICTION;
+
+        const atEdge = el.scrollLeft <= 0 || el.scrollLeft >= maxScroll - 0.5;
+        if (Math.abs(velocity) < MOMENTUM_MIN_VELOCITY || atEdge) {
+          momentumRef.current = null;
+          setSettling(false);
+          measure();
+          return;
+        }
+        momentumRef.current = requestAnimationFrame(frame);
+      };
+
+      momentumRef.current = requestAnimationFrame(frame);
     },
-    [scrollToIndex, stepWidth],
+    [stopMomentum, measure],
   );
 
   const pauseAutoScroll = useCallback(() => {
@@ -165,6 +200,7 @@ export function HorizontalScroll({
       const absY = Math.abs(e.deltaY);
       if (absX <= absY || e.deltaX === 0) return;
       e.preventDefault();
+      stopMomentum();
       el.scrollLeft += e.deltaX;
       pauseAutoScroll();
       scheduleResume();
@@ -173,12 +209,14 @@ export function HorizontalScroll({
     const onKeyDown = (e: KeyboardEvent) => {
       if (e.key === "ArrowLeft") {
         e.preventDefault();
+        stopMomentum();
         scrollByPage(-1);
         pauseAutoScroll();
         scheduleResume();
       }
       if (e.key === "ArrowRight") {
         e.preventDefault();
+        stopMomentum();
         scrollByPage(1);
         pauseAutoScroll();
         scheduleResume();
@@ -195,6 +233,8 @@ export function HorizontalScroll({
 
     const onPointerDown = (e: PointerEvent) => {
       pauseAutoScroll();
+      stopMomentum();
+      setSettling(false);
       if (e.button !== 0) return;
       isDown = true;
       moved = false;
@@ -240,7 +280,7 @@ export function HorizontalScroll({
       isDown = false;
       setDragging(false);
       draggingRef.current = false;
-      if (moved) snapToNearest(velocity);
+      if (moved) startMomentum(velocity);
       scheduleResume();
     };
 
@@ -279,8 +319,9 @@ export function HorizontalScroll({
       window.removeEventListener("pointercancel", endDrag);
       el.removeEventListener("click", onClickCapture, true);
       clearTimeout(scrollEndTimer);
+      stopMomentum();
     };
-  }, [pauseAutoScroll, scheduleResume, scrollByPage, snapToNearest, measure]);
+  }, [pauseAutoScroll, scheduleResume, scrollByPage, startMomentum, stopMomentum, measure]);
 
   useEffect(() => {
     if (!autoScrollEnabled) return;
@@ -376,9 +417,10 @@ export function HorizontalScroll({
         className={cn(
           "flex gap-5 overflow-x-auto overscroll-x-contain pb-4 pt-1 outline-none sm:gap-6",
           "touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-          dragging
-            ? "cursor-grabbing snap-none scroll-auto select-none"
-            : "cursor-grab snap-x snap-mandatory scroll-smooth",
+          dragging || settling
+            ? "snap-none scroll-auto select-none"
+            : "snap-x snap-proximity scroll-smooth",
+          dragging ? "cursor-grabbing" : "cursor-grab",
         )}
         style={{
           paddingLeft: EDGE_PADDING,
