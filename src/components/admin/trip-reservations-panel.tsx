@@ -2,11 +2,16 @@ import { useMemo, useState } from "react";
 import type { Reservation, ReservationStatus, Trip } from "@/api/types";
 import {
   reservationStatusLabel,
+  useDeleteReservation,
   useListReservationsByTrip,
   useUpdateReservationStatus,
 } from "@/api";
 import { useUpdateTripCapacity } from "@/api/trips";
 import { useAuth } from "@/lib/auth";
+import {
+  downloadTripPassengerList,
+  printTripPassengerList,
+} from "@/lib/trip-passenger-list";
 import {
   tripAvailabilityBarColor,
   tripAvailabilityLabel,
@@ -24,7 +29,7 @@ import {
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { MessageCircle, Phone, Plus } from "lucide-react";
+import { Download, MessageCircle, Phone, Plus, Printer, Trash2 } from "lucide-react";
 
 function formatDate(iso: string) {
   try {
@@ -63,6 +68,7 @@ export function TripReservationsPanel({
 
   const updateStatus = useUpdateReservationStatus();
   const updateCapacity = useUpdateTripCapacity();
+  const deleteReservation = useDeleteReservation();
 
   const remaining = tripSpotsRemaining(trip.capacity, trip.spotsTaken);
   const fillPercent =
@@ -148,6 +154,31 @@ export function TripReservationsPanel({
             ))}
           </div>
         </div>
+
+        {canWrite && (
+          <div className="mt-4 flex flex-wrap items-center gap-2 border-t border-border/50 pt-4">
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => downloadTripPassengerList(trip, reservations)}
+            >
+              <Download className="h-3.5 w-3.5" />
+              Télécharger la liste
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              className="gap-1.5"
+              onClick={() => printTripPassengerList(trip, reservations)}
+            >
+              <Printer className="h-3.5 w-3.5" />
+              Imprimer
+            </Button>
+          </div>
+        )}
 
         {canWrite && (
           <div className="mt-4 flex flex-wrap items-end gap-2 border-t border-border/50 pt-4">
@@ -255,29 +286,49 @@ export function TripReservationsPanel({
                   </a>
                 </Button>
                 {canWrite ? (
-                  <Select
-                    value={r.status}
-                    onValueChange={async (v) => {
-                      try {
-                        await updateStatus.mutateAsync({
-                          id: r.id,
-                          status: v as ReservationStatus,
-                        });
-                        toast.success("Statut mis à jour");
-                      } catch (err) {
-                        toast.error(err instanceof Error ? err.message : "Erreur");
-                      }
-                    }}
-                  >
-                    <SelectTrigger className="hidden h-8 w-[130px] sm:flex">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="waitlisted">Réservée</SelectItem>
-                      <SelectItem value="confirmed">Confirmée</SelectItem>
-                      <SelectItem value="cancelled">Annulée</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <>
+                    <Select
+                      value={r.status}
+                      onValueChange={async (v) => {
+                        try {
+                          await updateStatus.mutateAsync({
+                            id: r.id,
+                            status: v as ReservationStatus,
+                          });
+                          toast.success("Statut mis à jour");
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Erreur");
+                        }
+                      }}
+                    >
+                      <SelectTrigger className="hidden h-8 w-[130px] sm:flex">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="waitlisted">Réservée</SelectItem>
+                        <SelectItem value="confirmed">Confirmée</SelectItem>
+                        <SelectItem value="cancelled">Annulée</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-destructive"
+                      aria-label="Supprimer"
+                      onClick={async () => {
+                        if (!window.confirm(`Supprimer ${r.firstName} ${r.lastName} ?`)) return;
+                        try {
+                          await deleteReservation.mutateAsync(r.id);
+                          toast.success("Participant supprimé");
+                        } catch (err) {
+                          toast.error(err instanceof Error ? err.message : "Erreur");
+                        }
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </>
                 ) : (
                   <span
                     className={cn(

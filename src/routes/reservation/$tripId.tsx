@@ -23,7 +23,10 @@ import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ReservationReceipt } from "@/components/public/reservation-receipt";
+import { ReservationSuccessModal } from "@/components/public/reservation-success-modal";
 import type { ReservationReceiptData } from "@/lib/reservation-receipt";
+import { formatDepartureCountdown, formatDepartureDate, isTripPublicVisible } from "@/lib/trip-dates";
+import { isValidPhone } from "@/lib/phone";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/reservation/$tripId")({
@@ -44,6 +47,12 @@ function ReservationPage() {
   });
   const [waitlist, setWaitlist] = useState({ firstName: "", lastName: "", phone: "" });
   const [success, setSuccess] = useState<ReservationReceiptData | null>(null);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+
+  const saveSuccess = (data: ReservationReceiptData) => {
+    setSuccess(data);
+    setSuccessModalOpen(true);
+  };
 
   if (isLoading) {
     return (
@@ -55,11 +64,14 @@ function ReservationPage() {
     );
   }
 
-  if (!trip) {
+  if (!trip || !isTripPublicVisible(trip)) {
     return (
       <PublicLayout>
         <div className="mx-auto max-w-3xl px-6 pb-16 pt-24 text-center">
           <HeroTitle as="h1" className="text-forest">Voyage introuvable</HeroTitle>
+          <HeroLead className="mt-3">
+            Cette offre n&apos;est plus disponible (date passée ou retirée du site).
+          </HeroLead>
         </div>
       </PublicLayout>
     );
@@ -68,9 +80,15 @@ function ReservationPage() {
   const remaining = tripSpotsRemaining(trip.capacity, trip.spotsTaken);
   const full = remaining <= 0;
   const fillPct = trip.capacity > 0 ? ((trip.capacity - remaining) / trip.capacity) * 100 : 100;
+  const countdown = formatDepartureCountdown(trip);
+  const departureLabel = formatDepartureDate(trip);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValidPhone(form.phone)) {
+      toast.error("Numéro de téléphone invalide (9 chiffres minimum).");
+      return;
+    }
     try {
       const result = await createReservation.mutateAsync({
         tripId: trip.id,
@@ -79,7 +97,7 @@ function ReservationPage() {
         phone: form.phone,
         location: form.location,
       });
-      setSuccess({
+      saveSuccess({
         bookingRef: result.bookingRef,
         status: result.status,
         tripTitle: trip.title,
@@ -92,9 +110,6 @@ function ReservationPage() {
         location: form.location,
         createdAt: new Date().toISOString(),
       });
-      toast.success(
-        result.status === "waitlisted" ? "Ajouté à la liste d'attente" : "Réservation confirmée !",
-      );
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Réservation échouée");
     }
@@ -102,6 +117,10 @@ function ReservationPage() {
 
   const handleWaitlist = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!isValidPhone(waitlist.phone)) {
+      toast.error("Numéro de téléphone invalide (9 chiffres minimum).");
+      return;
+    }
     try {
       const result = await createReservation.mutateAsync({
         tripId: trip.id,
@@ -110,7 +129,7 @@ function ReservationPage() {
         phone: waitlist.phone,
         location: "Liste d'attente",
       });
-      setSuccess({
+      saveSuccess({
         bookingRef: result.bookingRef,
         status: "waitlisted",
         tripTitle: trip.title,
@@ -123,7 +142,6 @@ function ReservationPage() {
         location: "Liste d'attente",
         createdAt: new Date().toISOString(),
       });
-      toast.success("On te rappelle dès qu'une place se libère !");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Erreur");
     }
@@ -136,7 +154,7 @@ function ReservationPage() {
           <img
             src={trip.photoUrl ?? ""}
             alt={trip.title}
-            className="aspect-video w-full object-cover"
+            className="block w-full object-contain"
           />
           <HeroBadge
             variant={full ? "danger" : "mint"}
@@ -152,6 +170,14 @@ function ReservationPage() {
         <p className="mt-2 text-sm font-medium text-muted-foreground">
           {trip.duration} · {formatPrice(trip.price)} DA
         </p>
+        {countdown && (
+          <p className="mt-2 text-sm font-semibold text-forest">
+            {countdown}
+            {departureLabel && (
+              <span className="font-normal text-muted-foreground"> · {departureLabel}</span>
+            )}
+          </p>
+        )}
 
         <HeroCard className="mt-6 p-5">
           <div className="flex flex-wrap items-end justify-between gap-3">
@@ -206,7 +232,15 @@ function ReservationPage() {
         )}
 
         {success ? (
-          <ReservationReceipt data={success} />
+          <>
+            <ReservationSuccessModal
+              open={successModalOpen}
+              bookingRef={success.bookingRef}
+              isWaitlist={success.status === "waitlisted"}
+              onClose={() => setSuccessModalOpen(false)}
+            />
+            {!successModalOpen && <ReservationReceipt data={success} />}
+          </>
         ) : full ? (
           <HeroCard className="mt-10 p-6">
             <form onSubmit={handleWaitlist} className="space-y-4">

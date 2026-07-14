@@ -69,6 +69,9 @@ function mapTripSummary(row: Record<string, unknown> | null | undefined): Trip |
     capacity: Number(row.capacity ?? 0),
     spotsTaken: Number(row.spots_taken ?? 0),
     active: Boolean(row.active ?? true),
+    archived: Boolean(row.archived ?? false),
+    departureDate: row.departure_date ? String(row.departure_date) : null,
+    media: [],
     createdAt: String(row.created_at ?? ""),
   };
 }
@@ -90,7 +93,7 @@ function mapReservation(row: Record<string, unknown>): Reservation {
 }
 
 const RESERVATION_SELECT =
-  "*, trips(id, title, description, photo_url, meeting_point, includes, price, duration, capacity, spots_taken, active, created_at)";
+  "*, trips(id, title, description, photo_url, meeting_point, includes, price, duration, capacity, spots_taken, active, archived, departure_date, created_at)";
 
 export function useCreateReservation() {
   const qc = useQueryClient();
@@ -225,6 +228,29 @@ export function useCancelReservation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: (id: string) => updateReservationStatusById(id, "cancelled"),
+    onSuccess: () => invalidateReservationQueries(qc),
+  });
+}
+
+export function useDeleteReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { data: existing, error: fetchError } = await supabase
+        .from("reservations")
+        .select("id, status, trip_id")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw new Error(formatPostgrestError(fetchError));
+
+      const oldStatus = existing.status as ReservationStatus;
+      if (oldStatus === "confirmed") {
+        await syncSpotsForStatusChange(existing.trip_id, oldStatus, "cancelled");
+      }
+
+      const { error } = await supabase.from("reservations").delete().eq("id", id);
+      if (error) throw new Error(formatPostgrestError(error));
+    },
     onSuccess: () => invalidateReservationQueries(qc),
   });
 }

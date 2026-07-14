@@ -1,3 +1,4 @@
+import { jsPDF } from "jspdf";
 import { AGENCY_CONTACT, formatPrice } from "@/lib/constants";
 
 export type ReservationReceiptData = {
@@ -14,6 +15,11 @@ export type ReservationReceiptData = {
   createdAt?: string;
 };
 
+const FOREST = [45, 106, 79] as const;
+const MUTED = [92, 107, 96] as const;
+const INK = [10, 18, 12] as const;
+const BORDER = [232, 237, 233] as const;
+
 function formatReceiptDate(iso?: string) {
   const date = iso ? new Date(iso) : new Date();
   return date.toLocaleString("fr-DZ", {
@@ -28,106 +34,136 @@ function statusLabel(status: ReservationReceiptData["status"]) {
   return "Confirmée";
 }
 
-function buildReceiptHtml(data: ReservationReceiptData) {
-  const created = formatReceiptDate(data.createdAt);
-  const status = statusLabel(data.status);
-
-  return `<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="utf-8" />
-  <title>Reçu GreenVibes — ${data.bookingRef}</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: "Segoe UI", system-ui, sans-serif;
-      color: #0a120c;
-      background: #f8f0e3;
-      margin: 0;
-      padding: 32px 16px;
-    }
-    .card {
-      max-width: 520px;
-      margin: 0 auto;
-      background: #fff;
-      border-radius: 24px;
-      padding: 32px;
-      border: 1px solid #e8ede9;
-      box-shadow: 0 8px 32px rgba(10, 31, 20, 0.08);
-    }
-    .brand { color: #2d6a4f; font-size: 22px; font-weight: 700; margin: 0; }
-    .subtitle { color: #5c6b60; font-size: 14px; margin: 6px 0 0; }
-    h1 { font-size: 20px; margin: 24px 0 8px; color: #2d6a4f; }
-    .ref { font-size: 18px; font-weight: 700; letter-spacing: 0.04em; }
-    table { width: 100%; border-collapse: collapse; margin-top: 20px; font-size: 14px; }
-    td { padding: 10px 0; border-bottom: 1px solid #e8ede9; vertical-align: top; }
-    td:first-child { color: #5c6b60; width: 42%; }
-    td:last-child { font-weight: 600; text-align: right; }
-    .footer { margin-top: 24px; font-size: 12px; color: #5c6b60; line-height: 1.6; }
-    .badge {
-      display: inline-block;
-      background: #d8f3dc;
-      color: #2d6a4f;
-      padding: 4px 12px;
-      border-radius: 999px;
-      font-size: 12px;
-      font-weight: 600;
-    }
-  </style>
-</head>
-<body>
-  <div class="card">
-    <p class="brand">GreenVibes</p>
-    <p class="subtitle">Reçu de réservation · ${created}</p>
-    <h1>${data.status === "waitlisted" ? "Liste d'attente" : "Réservation enregistrée"}</h1>
-    <p class="ref">${data.bookingRef}</p>
-    <p><span class="badge">${status}</span></p>
-    <table>
-      <tr><td>Sortie</td><td>${escapeHtml(data.tripTitle)}</td></tr>
-      <tr><td>Durée</td><td>${escapeHtml(data.tripDuration)}</td></tr>
-      <tr><td>Prix</td><td>${formatPrice(data.tripPrice)} DA</td></tr>
-      <tr><td>Voyageur</td><td>${escapeHtml(data.firstName)} ${escapeHtml(data.lastName)}</td></tr>
-      <tr><td>Téléphone</td><td>${escapeHtml(data.phone)}</td></tr>
-      <tr><td>Localisation</td><td>${escapeHtml(data.location)}</td></tr>
-      ${data.tripMeetingPoint ? `<tr><td>Rendez-vous</td><td>${escapeHtml(data.tripMeetingPoint)}</td></tr>` : ""}
-    </table>
-    <p class="footer">
-      ${AGENCY_CONTACT.name} · ${AGENCY_CONTACT.address}<br />
-      ${AGENCY_CONTACT.phoneDisplay} · ${AGENCY_CONTACT.instagram.replace("https://www.instagram.com/", "@").replace(/\/$/, "")}<br />
-      Conserve ce reçu — il contient ta référence de réservation.
-    </p>
-  </div>
-</body>
-</html>`;
+function receiptTitle(status: ReservationReceiptData["status"]) {
+  if (status === "waitlisted") return "Liste d'attente enregistrée";
+  return "Réservation enregistrée";
 }
 
-function escapeHtml(value: string) {
-  return value
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;");
+function followUpMessage(status: ReservationReceiptData["status"]) {
+  if (status === "waitlisted") {
+    return "L'équipe GreenVibes te contactera sous 24 à 48 h si une place se libère.";
+  }
+  return "L'équipe GreenVibes t'appellera sous 24 à 48 h pour confirmer les détails.";
+}
+
+function drawLabelValueRow(
+  doc: jsPDF,
+  label: string,
+  value: string,
+  y: number,
+  margin: number,
+  pageWidth: number,
+): number {
+  const valueX = margin + 42;
+  const valueWidth = pageWidth - margin - valueX;
+  const valueLines = doc.splitTextToSize(value, valueWidth);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.setTextColor(...MUTED);
+  doc.text(label, margin, y);
+
+  doc.setFont("helvetica", "bold");
+  doc.setTextColor(...INK);
+  doc.text(valueLines, valueX, y);
+
+  const rowHeight = Math.max(7, valueLines.length * 4.5);
+  const lineY = y + rowHeight - 2;
+  doc.setDrawColor(...BORDER);
+  doc.line(margin, lineY, pageWidth - margin, lineY);
+
+  return lineY + 5;
+}
+
+export function buildReservationReceiptPdf(data: ReservationReceiptData): jsPDF {
+  const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a5" });
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const margin = 14;
+  let y = 18;
+
+  doc.setFillColor(...FOREST);
+  doc.rect(0, 0, pageWidth, 30, "F");
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(20);
+  doc.text("GreenVibes", margin, 14);
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(9);
+  doc.text("Reçu de réservation", margin, 22);
+  doc.text(formatReceiptDate(data.createdAt), pageWidth - margin, 22, { align: "right" });
+
+  y = 42;
+  doc.setTextColor(...FOREST);
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(13);
+  doc.text(receiptTitle(data.status), margin, y);
+
+  y += 9;
+  doc.setFontSize(17);
+  doc.text(data.bookingRef, margin, y);
+
+  y += 8;
+  doc.setFontSize(10);
+  doc.setFont("helvetica", "normal");
+  doc.text(`Statut : ${statusLabel(data.status)}`, margin, y);
+
+  y += 10;
+  const rows: [string, string][] = [
+    ["Sortie", data.tripTitle],
+    ["Durée", data.tripDuration],
+    ["Prix", `${formatPrice(data.tripPrice)} DA`],
+    ["Voyageur", `${data.firstName} ${data.lastName}`],
+    ["Téléphone", data.phone],
+    ["Localisation", data.location],
+  ];
+  if (data.tripMeetingPoint) {
+    rows.push(["Rendez-vous", data.tripMeetingPoint]);
+  }
+
+  for (const [label, value] of rows) {
+    y = drawLabelValueRow(doc, label, value, y, margin, pageWidth);
+  }
+
+  y += 4;
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(8.5);
+  doc.setTextColor(...MUTED);
+  const footer = [
+    followUpMessage(data.status),
+    "",
+    `${AGENCY_CONTACT.name} · ${AGENCY_CONTACT.address}`,
+    `${AGENCY_CONTACT.phoneDisplay} · @gree.n_vibes`,
+    "Conserve ce reçu — il contient ta référence de réservation.",
+  ];
+
+  for (const line of footer) {
+    if (!line) {
+      y += 2;
+      continue;
+    }
+    const wrapped = doc.splitTextToSize(line, pageWidth - margin * 2);
+    doc.text(wrapped, margin, y);
+    y += wrapped.length * 4;
+  }
+
+  return doc;
 }
 
 export function downloadReservationReceipt(data: ReservationReceiptData) {
-  const html = buildReceiptHtml(data);
-  const blob = new Blob([html], { type: "text/html;charset=utf-8" });
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement("a");
-  link.href = url;
-  link.download = `greenvibes-recu-${data.bookingRef}.html`;
-  link.click();
-  URL.revokeObjectURL(url);
+  const doc = buildReservationReceiptPdf(data);
+  doc.save(`greenvibes-recu-${data.bookingRef}.pdf`);
 }
 
 export function printReservationReceipt(data: ReservationReceiptData) {
-  const html = buildReceiptHtml(data);
-  const printWindow = window.open("", "_blank", "noopener,noreferrer,width=640,height=800");
+  const doc = buildReservationReceiptPdf(data);
+  doc.autoPrint();
+  const url = doc.output("bloburl");
+  const printWindow = window.open(url, "_blank", "noopener,noreferrer");
   if (!printWindow) return;
-  printWindow.document.write(html);
-  printWindow.document.close();
-  printWindow.focus();
   printWindow.onload = () => {
+    printWindow.focus();
     printWindow.print();
   };
 }

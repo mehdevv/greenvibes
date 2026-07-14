@@ -1,6 +1,12 @@
 import type { Trip } from "@/api/types";
 import { PLACEHOLDER_IMAGES } from "@/lib/constants";
 
+function futureDate(daysFromNow: number) {
+  const d = new Date();
+  d.setDate(d.getDate() + daysFromNow);
+  return d.toISOString().slice(0, 10);
+}
+
 /** Offline preview when `trips` table is not migrated yet */
 export const DEMO_TRIPS: Trip[] = [
   {
@@ -16,6 +22,9 @@ export const DEMO_TRIPS: Trip[] = [
     capacity: 12,
     spotsTaken: 3,
     active: true,
+    archived: false,
+    departureDate: futureDate(12),
+    media: [],
     createdAt: new Date().toISOString(),
   },
   {
@@ -30,6 +39,9 @@ export const DEMO_TRIPS: Trip[] = [
     capacity: 10,
     spotsTaken: 7,
     active: true,
+    archived: false,
+    departureDate: futureDate(21),
+    media: [],
     createdAt: new Date().toISOString(),
   },
   {
@@ -44,6 +56,9 @@ export const DEMO_TRIPS: Trip[] = [
     capacity: 14,
     spotsTaken: 14,
     active: true,
+    archived: false,
+    departureDate: futureDate(7),
+    media: [],
     createdAt: new Date().toISOString(),
   },
   {
@@ -58,6 +73,9 @@ export const DEMO_TRIPS: Trip[] = [
     capacity: 16,
     spotsTaken: 2,
     active: true,
+    archived: false,
+    departureDate: futureDate(3),
+    media: [],
     createdAt: new Date().toISOString(),
   },
 ];

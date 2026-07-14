@@ -185,6 +185,16 @@ export interface CreateBookingResult {
 /** v2 — simplified trip model (cahier des charges) */
 export type ReservationStatus = "confirmed" | "waitlisted" | "cancelled";
 
+export type TripMediaType = "image" | "video";
+
+export interface TripMedia {
+  id: string;
+  tripId: string;
+  url: string;
+  mediaType: TripMediaType;
+  sortOrder: number;
+}
+
 export interface Trip {
   id: string;
   title: string;
@@ -197,6 +207,9 @@ export interface Trip {
   capacity: number;
   spotsTaken: number;
   active: boolean;
+  archived: boolean;
+  departureDate: string | null;
+  media: TripMedia[];
   createdAt: string;
 }
 

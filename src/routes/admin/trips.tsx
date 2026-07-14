@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { useListAllTripsAdmin, useListReservations, useReservationsRealtime } from "@/api";
+import { useListAllTripsAdmin, useListReservations, useReservationsRealtime, useDeleteTrip } from "@/api";
 import type { Reservation, Trip } from "@/api/types";
 import { TripFormDialog } from "@/components/admin/trip-form-dialog";
 import {
@@ -13,6 +13,7 @@ import {
   tripAvailabilityLabel,
   tripSpotsRemaining,
 } from "@/lib/availability";
+import { formatDepartureDate } from "@/lib/trip-dates";
 import { formatPrice } from "@/lib/constants";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -26,14 +27,16 @@ import {
   Pencil,
   Plus,
   Search,
+  Trash2,
   Users,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/trips")({
   component: AdminTripsPage,
 });
 
-type Filter = "all" | "active" | "inactive" | "full" | "available";
+type Filter = "all" | "active" | "inactive" | "archived" | "full" | "available";
 
 function groupByTrip(reservations: Reservation[]) {
   const map = new Map<string, Reservation[]>();
@@ -49,6 +52,7 @@ function AdminTripsPage() {
   const { canWrite } = useAuth();
   const { data: trips, isLoading, isError } = useListAllTripsAdmin();
   const { data: allReservations = [] } = useListReservations();
+  const deleteTrip = useDeleteTrip();
   useReservationsRealtime();
 
   const [search, setSearch] = useState("");
@@ -61,13 +65,15 @@ function AdminTripsPage() {
 
   const stats = useMemo(() => {
     const list = trips ?? [];
-    const active = list.filter((t) => t.active).length;
+    const active = list.filter((t) => t.active && !t.archived).length;
+    const archived = list.filter((t) => t.archived).length;
     const totalCapacity = list.reduce((s, t) => s + t.capacity, 0);
     const totalTaken = list.reduce((s, t) => s + t.spotsTaken, 0);
     const pending = allReservations.filter((r) => r.status === "waitlisted").length;
     return {
       offers: list.length,
       active,
+      archived,
       reservations: allReservations.length,
       pending,
       fillRate: totalCapacity > 0 ? Math.round((totalTaken / totalCapacity) * 100) : 0,
@@ -87,9 +93,11 @@ function AdminTripsPage() {
     }
     switch (filter) {
       case "active":
-        return list.filter((t) => t.active);
+        return list.filter((t) => t.active && !t.archived);
       case "inactive":
-        return list.filter((t) => !t.active);
+        return list.filter((t) => !t.active && !t.archived);
+      case "archived":
+        return list.filter((t) => t.archived);
       case "full":
         return list.filter((t) => tripSpotsRemaining(t.capacity, t.spotsTaken) <= 0);
       case "available":
@@ -118,6 +126,7 @@ function AdminTripsPage() {
     { id: "active", label: "Actives" },
     { id: "available", label: "Places libres" },
     { id: "full", label: "Complètes" },
+    { id: "archived", label: "Archivées" },
     { id: "inactive", label: "Inactives" },
   ];
 
@@ -139,7 +148,7 @@ function AdminTripsPage() {
       </div>
 
       <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-        <StatPill label="Offres" value={stats.offers} sub={`${stats.active} actives`} />
+        <StatPill label="Offres" value={stats.offers} sub={`${stats.active} actives · ${stats.archived} archivées`} />
         <StatPill label="Réservations" value={stats.reservations} sub={`${stats.pending} en attente`} />
         <StatPill label="Remplissage" value={`${stats.fillRate}%`} sub="global" />
         <StatPill
@@ -242,8 +251,8 @@ function AdminTripsPage() {
                             <h2 className="font-display text-lg font-semibold text-foreground">
                               {t.title}
                             </h2>
-                            <Badge variant={t.active ? "default" : "secondary"}>
-                              {t.active ? "Actif" : "Inactif"}
+                            <Badge variant={t.archived ? "outline" : t.active ? "default" : "secondary"}>
+                              {t.archived ? "Archivée" : t.active ? "Actif" : "Inactif"}
                             </Badge>
                             {remaining <= 0 && (
                               <Badge variant="destructive" className="text-[10px]">
@@ -253,6 +262,9 @@ function AdminTripsPage() {
                           </div>
                           <p className="mt-1 text-sm text-muted-foreground">
                             {formatPrice(t.price)} DA · {t.duration}
+                            {t.departureDate && (
+                              <> · Départ {formatDepartureDate(t) ?? t.departureDate}</>
+                            )}
                           </p>
                           {t.meetingPoint && (
                             <p className="mt-0.5 flex items-center gap-1 text-xs text-muted-foreground">
@@ -267,15 +279,40 @@ function AdminTripsPage() {
 
                         <div className="flex shrink-0 items-center gap-1">
                           {canWrite && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8"
-                              onClick={() => openEdit(t)}
-                              aria-label="Modifier"
-                            >
-                              <Pencil className="h-4 w-4" />
-                            </Button>
+                            <>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8"
+                                onClick={() => openEdit(t)}
+                                aria-label="Modifier"
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="h-8 w-8 text-destructive"
+                                aria-label="Supprimer l'offre"
+                                onClick={async () => {
+                                  if (
+                                    !window.confirm(
+                                      `Supprimer définitivement « ${t.title} » et toutes ses réservations ?`,
+                                    )
+                                  ) {
+                                    return;
+                                  }
+                                  try {
+                                    await deleteTrip.mutateAsync(t.id);
+                                    toast.success("Offre supprimée");
+                                  } catch (err) {
+                                    toast.error(err instanceof Error ? err.message : "Erreur");
+                                  }
+                                }}
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                            </>
                           )}
                           <Button
                             variant="ghost"

@@ -29,6 +29,18 @@ export function formatPostgrestError(error: {
   hint?: string;
   code?: string;
 }): string {
+  const message = error.message ?? "";
+
+  if (
+    message.includes("déjà une réservation") ||
+    message.includes("deja une reservation")
+  ) {
+    return "Ce numéro a déjà une réservation pour cette sortie.";
+  }
+  if (message.includes("Numéro de téléphone invalide")) {
+    return "Numéro de téléphone invalide.";
+  }
+
   if (error.code === "22P02") {
     return "Identifiant invalide (destination ou référence).";
   }

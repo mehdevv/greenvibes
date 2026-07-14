@@ -5,6 +5,7 @@ import {
   tripAvailabilityBarColor,
   tripSpotsRemaining,
 } from "@/lib/constants";
+import { formatDepartureCountdown, formatDepartureDate } from "@/lib/trip-dates";
 import {
   HeroBadge,
   HeroCard,
@@ -12,6 +13,7 @@ import {
   HeroTitle,
   heroBtnClasses,
 } from "@/components/public/hero-ui";
+import { Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type TripCardProps = {
@@ -24,6 +26,8 @@ export function TripCardV2({ trip, horizontal }: TripCardProps) {
   const remaining = tripSpotsRemaining(trip.capacity, trip.spotsTaken);
   const full = remaining <= 0;
   const fillPct = trip.capacity > 0 ? ((trip.capacity - remaining) / trip.capacity) * 100 : 100;
+  const countdown = formatDepartureCountdown(trip);
+  const departureLabel = formatDepartureDate(trip);
 
   return (
     <HeroCard
@@ -59,6 +63,17 @@ export function TripCardV2({ trip, horizontal }: TripCardProps) {
         <HeroTitle as="h3" className={cn("text-forest", horizontal ? "text-lg" : "text-xl")}>
           {trip.title}
         </HeroTitle>
+
+        {countdown && (
+          <p className="mt-2 flex items-center gap-1.5 text-sm font-medium text-forest">
+            <Calendar className="h-4 w-4 shrink-0" />
+            <span>{countdown}</span>
+            {departureLabel && (
+              <span className="font-normal text-muted-foreground">· {departureLabel}</span>
+            )}
+          </p>
+        )}
+
         <HeroLead className={cn("mt-2 flex-1", horizontal ? "line-clamp-2 text-sm" : "line-clamp-3")}>
           {trip.description}
         </HeroLead>

@@ -22,8 +22,8 @@ export function ReservationReceipt({ data }: ReservationReceiptProps) {
         </HeroLead>
         <HeroLead className="mt-2 text-center text-sm">
           {isWaitlist
-            ? "On te contacte dès qu'une place se libère."
-            : "On te contacte très vite pour confirmer les détails."}
+            ? "On te contacte sous 24 à 48 h si une place se libère."
+            : "L'équipe GreenVibes t'appellera sous 24 à 48 h pour confirmer les détails."}
         </HeroLead>
 
         <dl className="mt-6 space-y-3 rounded-2xl bg-white/80 p-4 text-sm ring-1 ring-border/40">
@@ -71,7 +71,7 @@ export function ReservationReceipt({ data }: ReservationReceiptProps) {
           className="flex-1"
           onClick={() => downloadReservationReceipt(data)}
         >
-          Télécharger le reçu
+          Télécharger le PDF
         </HeroButton>
         <HeroButton
           type="button"

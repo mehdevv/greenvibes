@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import type { Trip } from "@/api/types";
-import { useCreateTrip, useUpdateTrip } from "@/api";
+import { useCreateTrip, useGetTrip, useUpdateTrip } from "@/api";
+import { ImageUpload } from "@/components/admin/image-upload";
+import { TripMediaUpload } from "@/components/admin/trip-media-upload";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -29,6 +31,8 @@ const emptyForm = {
   price: "",
   duration: "",
   capacity: "12",
+  departureDate: "",
+  photoUrl: "",
   active: true,
 };
 
@@ -36,10 +40,12 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
   const createTrip = useCreateTrip();
   const updateTrip = useUpdateTrip();
   const [form, setForm] = useState(emptyForm);
+  const [savedTripId, setSavedTripId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!open) return;
     if (trip) {
+      setSavedTripId(trip.id);
       setForm({
         title: trip.title,
         description: trip.description,
@@ -48,9 +54,12 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
         price: String(trip.price),
         duration: trip.duration,
         capacity: String(trip.capacity),
-        active: trip.active,
+        departureDate: trip.departureDate ?? "",
+        photoUrl: trip.photoUrl ?? "",
+        active: trip.active && !trip.archived,
       });
     } else {
+      setSavedTripId(null);
       setForm(emptyForm);
     }
   }, [open, trip]);
@@ -69,6 +78,8 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
       price: Number(form.price) || 0,
       duration: form.duration,
       capacity: Math.max(1, Number(form.capacity) || 1),
+      departureDate: form.departureDate || null,
+      photoUrl: form.photoUrl || null,
       active: form.active,
     };
 
@@ -77,8 +88,10 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
         await updateTrip.mutateAsync({ id: trip.id, ...payload });
         toast.success("Offre mise à jour");
       } else {
-        await createTrip.mutateAsync(payload);
-        toast.success("Offre créée");
+        const created = await createTrip.mutateAsync(payload);
+        setSavedTripId(created.id);
+        toast.success("Offre créée — vous pouvez ajouter des photos/vidéos");
+        return;
       }
       onOpenChange(false);
     } catch (err) {
@@ -87,6 +100,9 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
   };
 
   const pending = createTrip.isPending || updateTrip.isPending;
+  const mediaTripId = trip?.id ?? savedTripId ?? "";
+  const { data: liveTrip } = useGetTrip(mediaTripId);
+  const currentMedia = liveTrip?.media ?? trip?.media ?? [];
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -145,6 +161,15 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
               />
             </div>
             <div>
+              <Label htmlFor="trip-departure">Date de départ</Label>
+              <Input
+                id="trip-departure"
+                type="date"
+                value={form.departureDate}
+                onChange={(e) => setForm({ ...form, departureDate: e.target.value })}
+              />
+            </div>
+            <div className="sm:col-span-2">
               <Label htmlFor="trip-meeting">Point de rendez-vous</Label>
               <Input
                 id="trip-meeting"
@@ -162,6 +187,17 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
               placeholder="Transport, guide, déjeuner"
             />
           </div>
+
+          <ImageUpload
+            label="Image de couverture"
+            value={form.photoUrl}
+            onChange={(url) => setForm({ ...form, photoUrl: url })}
+          />
+
+          {mediaTripId && (
+            <TripMediaUpload tripId={mediaTripId} media={currentMedia} />
+          )}
+
           <div className="flex items-center gap-3 rounded-xl border border-border bg-secondary/30 px-4 py-3">
             <Switch
               id="trip-active"
@@ -172,14 +208,20 @@ export function TripFormDialog({ open, onOpenChange, trip }: TripFormDialogProps
               Visible sur le site public
             </Label>
           </div>
+          {trip?.archived && (
+            <p className="text-xs text-amber-700">
+              Cette offre est archivée (date de départ dépassée). Réactivez-la en modifiant la date ou
+              le statut.
+            </p>
+          )}
         </div>
 
         <DialogFooter className="gap-2 sm:gap-0">
           <Button variant="outline" onClick={() => onOpenChange(false)} disabled={pending}>
-            Annuler
+            {savedTripId && !trip ? "Fermer" : "Annuler"}
           </Button>
           <Button onClick={handleSave} disabled={pending}>
-            {pending ? "Enregistrement…" : trip ? "Enregistrer" : "Créer l'offre"}
+            {pending ? "Enregistrement…" : trip ? "Enregistrer" : savedTripId ? "Mettre à jour" : "Créer l'offre"}
           </Button>
         </DialogFooter>
       </DialogContent>

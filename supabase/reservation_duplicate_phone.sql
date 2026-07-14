@@ -1,6 +1,5 @@
--- Run this in Supabase → SQL Editor (project loubwjuviwvjbeyxabyw)
--- Fixes: gen_random_bytes does not exist / create_reservation 404
--- Safe to re-run.
+-- Prevent duplicate reservations: same phone cannot book the same trip twice.
+-- Run in Supabase SQL Editor after fix_reservation_rpc.sql
 
 CREATE OR REPLACE FUNCTION public.normalize_phone(p text)
 RETURNS text
@@ -14,26 +13,6 @@ AS $$
     ELSE right(d, 9)
   END
   FROM (SELECT regexp_replace(trim(coalesce(p, '')), '[^0-9]', '', 'g') AS d) s;
-$$;
-
-CREATE OR REPLACE FUNCTION public.generate_reservation_ref()
-RETURNS text
-LANGUAGE plpgsql
-SET search_path = public
-AS $$
-DECLARE
-  ref text;
-  exists_ref boolean;
-BEGIN
-  LOOP
-    -- No pgcrypto needed — works on all Supabase projects
-    ref := 'GV-' || to_char(now(), 'YYYYMMDD') || '-' ||
-      upper(substr(md5(random()::text || clock_timestamp()::text), 1, 4));
-    SELECT EXISTS(SELECT 1 FROM public.reservations WHERE booking_ref = ref) INTO exists_ref;
-    EXIT WHEN NOT exists_ref;
-  END LOOP;
-  RETURN ref;
-END;
 $$;
 
 CREATE OR REPLACE FUNCTION public.create_reservation(
@@ -54,13 +33,20 @@ DECLARE
   v_reservation_id uuid;
   v_status text;
   v_remaining integer;
+  v_phone_norm text;
 BEGIN
   IF trim(p_first_name) = '' OR trim(p_last_name) = '' OR trim(p_phone) = '' OR trim(p_location) = '' THEN
     RAISE EXCEPTION 'Tous les champs sont requis';
   END IF;
 
-  IF length(public.normalize_phone(p_phone)) < 9 THEN
+  v_phone_norm := public.normalize_phone(p_phone);
+  IF length(v_phone_norm) < 9 THEN
     RAISE EXCEPTION 'Numéro de téléphone invalide';
+  END IF;
+
+  SELECT * INTO v_trip FROM public.trips WHERE id = p_trip_id FOR UPDATE;
+  IF NOT FOUND OR NOT v_trip.active THEN
+    RAISE EXCEPTION 'Voyage introuvable';
   END IF;
 
   IF EXISTS (
@@ -68,14 +54,9 @@ BEGIN
     FROM public.reservations r
     WHERE r.trip_id = p_trip_id
       AND r.status <> 'cancelled'
-      AND public.normalize_phone(r.phone) = public.normalize_phone(p_phone)
+      AND public.normalize_phone(r.phone) = v_phone_norm
   ) THEN
     RAISE EXCEPTION 'Ce numéro a déjà une réservation pour cette sortie';
-  END IF;
-
-  SELECT * INTO v_trip FROM public.trips WHERE id = p_trip_id FOR UPDATE;
-  IF NOT FOUND OR NOT v_trip.active THEN
-    RAISE EXCEPTION 'Voyage introuvable';
   END IF;
 
   v_remaining := v_trip.capacity - v_trip.spots_taken;
@@ -109,4 +90,3 @@ $$;
 
 GRANT EXECUTE ON FUNCTION public.normalize_phone(text) TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.create_reservation(uuid, text, text, text, text) TO anon, authenticated;
-GRANT EXECUTE ON FUNCTION public.generate_reservation_ref() TO anon, authenticated;

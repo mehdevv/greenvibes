@@ -4,6 +4,7 @@ import {
   exportReservationsCsv,
   reservationStatusLabel,
   useCancelReservation,
+  useDeleteReservation,
   useListReservations,
   useReservationsRealtime,
   useUpdateReservationStatus,
@@ -44,6 +45,7 @@ function AdminReservationsPage() {
   });
   const updateStatus = useUpdateReservationStatus();
   const cancelReservation = useCancelReservation();
+  const deleteReservation = useDeleteReservation();
 
   const handleExport = async () => {
     if (!reservations?.length) return;
@@ -167,23 +169,41 @@ function AdminReservationsPage() {
                     </td>
                     {canWrite && (
                       <td className="py-3">
-                        {r.status !== "cancelled" && (
+                        <div className="flex gap-1">
+                          {r.status !== "cancelled" && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive"
+                              onClick={async () => {
+                                try {
+                                  await cancelReservation.mutateAsync(r.id);
+                                  toast.success("Réservation annulée");
+                                } catch (err) {
+                                  toast.error(err instanceof Error ? err.message : "Erreur");
+                                }
+                              }}
+                            >
+                              Annuler
+                            </Button>
+                          )}
                           <Button
                             variant="ghost"
                             size="sm"
                             className="text-destructive"
                             onClick={async () => {
+                              if (!window.confirm(`Supprimer ${r.firstName} ${r.lastName} ?`)) return;
                               try {
-                                await cancelReservation.mutateAsync(r.id);
-                                toast.success("Réservation annulée");
+                                await deleteReservation.mutateAsync(r.id);
+                                toast.success("Réservation supprimée");
                               } catch (err) {
                                 toast.error(err instanceof Error ? err.message : "Erreur");
                               }
                             }}
                           >
-                            Annuler
+                            Supprimer
                           </Button>
-                        )}
+                        </div>
                       </td>
                     )}
                   </tr>
