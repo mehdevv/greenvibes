@@ -117,7 +117,7 @@ export function HeroLead({ children, className }: { children: ReactNode; classNa
   );
 }
 
-function HeroScrollChevron({ className }: { className?: string }) {
+export function HeroScrollChevron({ className }: { className?: string }) {
   const reduceMotion = useReducedMotion();
 
   return (

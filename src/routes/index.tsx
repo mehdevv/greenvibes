@@ -1,4 +1,8 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useSiteImages } from "@/api/site-images";
+import { useSiteGalleryItems, usePresentationBlocks } from "@/api/site-content";
+import { useMediaLayout } from "@/api/site-media-layout";
+import { useSiteTexts } from "@/api/site-texts";
 import { PublicLayout } from "@/components/layout/public-layout";
 import { HeroSplit } from "@/components/public/hero-split";
 import { ServicesSection } from "@/components/public/services-section";
@@ -13,6 +17,12 @@ export const Route = createFileRoute("/")({
 });
 
 function HomePage() {
+  useSiteImages();
+  useSiteGalleryItems();
+  usePresentationBlocks();
+  useMediaLayout();
+  useSiteTexts();
+
   return (
     <PublicLayout>
       <HeroSplit />

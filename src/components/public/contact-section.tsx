@@ -1,7 +1,7 @@
 import { Facebook, Instagram, MapPin, Phone } from "lucide-react";
+import { EditableBlockHeader } from "@/components/admin/editable-text";
 import { AGENCY_CONTACT } from "@/lib/constants";
 import {
-  HeroBlockHeader,
   HeroCard,
   HeroContainer,
   HeroDecorBlob,
@@ -19,10 +19,12 @@ export function ContactSection() {
       <HeroContainer className="relative">
         <div className="grid items-stretch gap-10 lg:grid-cols-[minmax(0,380px)_1fr] lg:gap-12 xl:gap-16">
           <HeroReveal>
-            <HeroBlockHeader
+            <EditableBlockHeader
               align="left"
               title="On se parle ?"
+              titleKey="contact.title"
               subtitle="Une question sur une sortie ou envie de réserver ? Appelle-nous, passe sur WhatsApp ou viens nous voir à l'agence."
+              subtitleKey="contact.subtitle"
             />
 
             <div className="mt-8 space-y-5">

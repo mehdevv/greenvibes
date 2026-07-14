@@ -1,6 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import type { AnalyticsOverview } from "./types";
-import { mapBooking } from "./mappers";
+import type { AnalyticsOverview, Reservation } from "./types";
 import { supabase } from "@/lib/supabase";
 
 function startOfDay(d: Date) {
@@ -9,6 +8,37 @@ function startOfDay(d: Date) {
 
 function startOfMonth(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), 1).toISOString();
+}
+
+function mapReservationRow(row: Record<string, unknown>): Reservation {
+  const trips = row.trips as Record<string, unknown> | null;
+  return {
+    id: String(row.id),
+    tripId: String(row.trip_id),
+    bookingRef: String(row.booking_ref),
+    firstName: String(row.first_name),
+    lastName: String(row.last_name),
+    phone: String(row.phone),
+    location: String(row.location),
+    status: row.status as Reservation["status"],
+    createdAt: String(row.created_at),
+    trip: trips
+      ? {
+          id: String(trips.id ?? row.trip_id),
+          title: String(trips.title ?? ""),
+          description: "",
+          photoUrl: null,
+          meetingPoint: "",
+          includes: [],
+          price: Number(trips.price ?? 0),
+          duration: "",
+          capacity: 0,
+          spotsTaken: 0,
+          active: true,
+          createdAt: "",
+        }
+      : null,
+  };
 }
 
 export function useAnalyticsOverview() {
@@ -21,51 +51,52 @@ export function useAnalyticsOverview() {
       const thirtyDaysAgo = new Date(now);
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
 
+      const selectWithTrip =
+        "*, trips(id, title, price, capacity, spots_taken)";
+
       const [
         bookingsTodayRes,
         bookingsMonthRes,
-        clientsRes,
-        offersRes,
-        sessionsRes,
+        tripsRes,
         recentRes,
-        allMonthBookingsRes,
+        trendRes,
+        monthWithTripsRes,
       ] = await Promise.all([
         supabase
-          .from("bookings")
+          .from("reservations")
           .select("id", { count: "exact", head: true })
           .gte("created_at", todayStart)
           .neq("status", "cancelled"),
         supabase
-          .from("bookings")
-          .select("total_price_dzd")
+          .from("reservations")
+          .select("id", { count: "exact", head: true })
           .gte("created_at", monthStart)
           .neq("status", "cancelled"),
-        supabase.from("clients").select("id", { count: "exact", head: true }),
-        supabase.from("offers").select("id", { count: "exact", head: true }).eq("is_active", true),
+        supabase.from("trips").select("id, capacity, spots_taken").eq("active", true),
         supabase
-          .from("trip_sessions")
-          .select("capacity, booked_count")
-          .gte("session_date", now.toISOString().slice(0, 10)),
-        supabase
-          .from("bookings")
-          .select(`*, trip_sessions(session_date, offer:offers!trip_sessions_offer_id_fkey(title)), clients(*)`)
+          .from("reservations")
+          .select(selectWithTrip)
           .order("created_at", { ascending: false })
           .limit(8),
         supabase
-          .from("bookings")
-          .select("created_at, trip_sessions(session_date, offer:offers!trip_sessions_offer_id_fkey(title))")
+          .from("reservations")
+          .select("created_at")
           .gte("created_at", thirtyDaysAgo.toISOString())
+          .neq("status", "cancelled"),
+        supabase
+          .from("reservations")
+          .select(selectWithTrip)
+          .gte("created_at", monthStart)
           .neq("status", "cancelled"),
       ]);
 
       const errors = [
         bookingsTodayRes.error,
         bookingsMonthRes.error,
-        clientsRes.error,
-        offersRes.error,
-        sessionsRes.error,
+        tripsRes.error,
         recentRes.error,
-        allMonthBookingsRes.error,
+        trendRes.error,
+        monthWithTripsRes.error,
       ].filter(Boolean);
 
       if (errors.length > 0) {
@@ -74,14 +105,17 @@ export function useAnalyticsOverview() {
         );
       }
 
-      const revenueThisMonth = (bookingsMonthRes.data ?? []).reduce(
-        (sum, b) => sum + Number(b.total_price_dzd),
-        0,
-      );
+      const monthRows = monthWithTripsRes.data ?? [];
+      const revenueThisMonth = monthRows
+        .filter((r) => r.status === "confirmed")
+        .reduce((sum, r) => {
+          const trip = r.trips as { price?: number } | null;
+          return sum + Number(trip?.price ?? 0);
+        }, 0);
 
-      const sessions = sessionsRes.data ?? [];
-      const totalCapacity = sessions.reduce((s, x) => s + (x.capacity ?? 0), 0);
-      const totalBooked = sessions.reduce((s, x) => s + (x.booked_count ?? 0), 0);
+      const trips = tripsRes.data ?? [];
+      const totalCapacity = trips.reduce((s, t) => s + Number(t.capacity ?? 0), 0);
+      const totalBooked = trips.reduce((s, t) => s + Number(t.spots_taken ?? 0), 0);
       const fillRatePercent =
         totalCapacity > 0 ? Math.round((totalBooked / totalCapacity) * 100) : 0;
 
@@ -91,33 +125,37 @@ export function useAnalyticsOverview() {
         d.setDate(d.getDate() - i);
         trendMap.set(d.toISOString().slice(0, 10), 0);
       }
-      for (const b of allMonthBookingsRes.data ?? []) {
-        const day = String(b.created_at).slice(0, 10);
+      for (const r of trendRes.data ?? []) {
+        const day = String(r.created_at).slice(0, 10);
         if (trendMap.has(day)) trendMap.set(day, (trendMap.get(day) ?? 0) + 1);
       }
 
-      const offerCounts = new Map<string, number>();
-      for (const b of allMonthBookingsRes.data ?? []) {
-        const session = b.trip_sessions as { offer?: { title?: string }; offers?: { title?: string } } | null;
-        const title = session?.offer?.title ?? session?.offers?.title ?? "Autre";
-        offerCounts.set(title, (offerCounts.get(title) ?? 0) + 1);
+      const tripCounts = new Map<string, number>();
+      for (const r of monthRows) {
+        const trip = r.trips as { title?: string } | null;
+        const title = trip?.title ?? "Autre";
+        tripCounts.set(title, (tripCounts.get(title) ?? 0) + 1);
       }
 
-      const topOffers = [...offerCounts.entries()]
+      const topOffers = [...tripCounts.entries()]
         .map(([title, bookings]) => ({ title, bookings }))
         .sort((a, b) => b.bookings - a.bookings)
         .slice(0, 5);
 
+      const uniqueClients = new Set(
+        monthRows.map((r) => `${r.phone}-${r.first_name}-${r.last_name}`),
+      );
+
       return {
         bookingsToday: bookingsTodayRes.count ?? 0,
-        bookingsThisMonth: (bookingsMonthRes.data ?? []).length,
+        bookingsThisMonth: bookingsMonthRes.count ?? 0,
         revenueThisMonth,
-        totalClients: clientsRes.count ?? 0,
-        activeOffers: offersRes.count ?? 0,
+        totalClients: uniqueClients.size,
+        activeOffers: trips.length,
         fillRatePercent,
         bookingsTrend: [...trendMap.entries()].map(([date, count]) => ({ date, count })),
         topOffers,
-        recentBookings: (recentRes.data ?? []).map((r) => mapBooking(r)),
+        recentBookings: (recentRes.data ?? []).map((r) => mapReservationRow(r)),
       };
     },
   });

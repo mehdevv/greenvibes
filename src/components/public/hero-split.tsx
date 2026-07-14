@@ -1,6 +1,9 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { ArrowRight, Volume2, VolumeX } from "lucide-react";
-import { HERO_VIDEO_SOURCES } from "@/lib/gallery-assets";
+import { useMergedHeroVideos } from "@/api/site-hero-videos";
+import { HeroVideoAdminLayer } from "@/components/admin/hero-video-admin";
+import { EditableText } from "@/components/admin/editable-text";
+import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { SectionWave } from "@/components/public/section-wave";
 import {
@@ -14,22 +17,35 @@ import {
 } from "@/components/public/hero-ui";
 
 export function HeroSplit() {
-  const videos = HERO_VIDEO_SOURCES;
+  const videos = useMergedHeroVideos();
+  const { user, canWrite } = useAuth();
+  const canEdit = Boolean(user && canWrite);
   const [index, setIndex] = useState(0);
   const [muted, setMuted] = useState(true);
   const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
+  const safeIndex = videos.length > 0 ? index % videos.length : 0;
+  const current = videos[safeIndex];
+
   const advance = useCallback(() => {
+    if (videos.length === 0) return;
     setIndex((i) => (i + 1) % videos.length);
   }, [videos.length]);
 
   useEffect(() => {
+    if (index >= videos.length && videos.length > 0) {
+      setIndex(0);
+    }
+  }, [index, videos.length]);
+
+  useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !current) return;
+    setVideoReady(false);
     video.load();
     video.play().catch(() => {});
-  }, [index]);
+  }, [safeIndex, current?.src]);
 
   const scrollToTrips = () => {
     document.getElementById("voyages")?.scrollIntoView({ behavior: "smooth" });
@@ -40,13 +56,20 @@ export function HeroSplit() {
       <HeroContainer>
         <div className="grid items-center gap-12 lg:grid-cols-2 lg:gap-16 xl:gap-24">
           <HeroReveal>
-            <HeroQuote>« L&apos;Algérie autrement, entre potes. »</HeroQuote>
+            <HeroQuote>
+              <EditableText textKey="hero.quote" label="Modifier la citation" />
+            </HeroQuote>
             <HeroTitle as="h1" className="mt-5">
-              Explore l&apos;Algérie avec <span className="text-forest">GreenVibes</span>
+              <EditableText textKey="hero.title.before" label="Modifier le titre" as="span" />
+              <EditableText
+                textKey="hero.title.highlight"
+                label="Modifier le nom de marque"
+                className="text-forest"
+                as="span"
+              />
             </HeroTitle>
             <HeroLead className="mt-6">
-              On part de Béjaïa pour découvrir mer, montagne et coins secrets — en petit groupe,
-              sans prise de tête. Tu réserves en deux minutes, on s&apos;occupe du reste.
+              <EditableText textKey="hero.lead" label="Modifier l'introduction" multiline as="span" />
             </HeroLead>
             <HeroButton
               variant="accent"
@@ -54,30 +77,46 @@ export function HeroSplit() {
               onClick={scrollToTrips}
               className="mt-8"
             >
-              Découvrir nos offres
+              <EditableText textKey="hero.cta" label="Modifier le bouton" as="span" />
             </HeroButton>
           </HeroReveal>
 
           <HeroReveal delay={0.15}>
-            <HeroMediaFrame>
-              <video
-                key={videos[index].src}
-                ref={videoRef}
-                className={cn(
-                  "aspect-[4/3] w-full object-cover transition-opacity duration-500 sm:aspect-video lg:aspect-[4/3]",
-                  videoReady ? "opacity-100" : "opacity-0",
-                )}
-                autoPlay
-                muted={muted}
-                playsInline
-                preload="auto"
-                onCanPlay={() => setVideoReady(true)}
-                onEnded={advance}
-              >
-                <source src={videos[index].src} type="video/mp4" />
-              </video>
+            <HeroMediaFrame className={cn(canEdit && "group")}>
+              {current ? (
+                <video
+                  key={current.src}
+                  ref={videoRef}
+                  className={cn(
+                    "aspect-[4/3] w-full object-cover transition-opacity duration-500 sm:aspect-video lg:aspect-[4/3]",
+                    videoReady ? "opacity-100" : "opacity-0",
+                  )}
+                  autoPlay
+                  muted={muted}
+                  playsInline
+                  preload="auto"
+                  onCanPlay={() => setVideoReady(true)}
+                  onEnded={advance}
+                >
+                  <source src={current.src} type="video/mp4" />
+                </video>
+              ) : (
+                <div className="flex aspect-[4/3] items-center justify-center bg-forest/10 text-sm text-muted-foreground">
+                  Aucune vidéo — ajoutez-en une en mode édition
+                </div>
+              )}
 
-              <div className="absolute bottom-4 right-4 flex items-center gap-2">
+              {canEdit && current && (
+                <HeroVideoAdminLayer
+                  current={current}
+                  videos={videos}
+                  currentIndex={safeIndex}
+                  onReplaced={() => setVideoReady(false)}
+                  onDeleted={() => setIndex(0)}
+                />
+              )}
+
+              <div className="absolute right-4 bottom-4 flex items-center gap-2">
                 <button
                   type="button"
                   onClick={() => setMuted((m) => !m)}
@@ -88,20 +127,22 @@ export function HeroSplit() {
                 </button>
               </div>
 
-              <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
-                {videos.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    aria-label={`Vidéo ${i + 1}`}
-                    onClick={() => setIndex(i)}
-                    className={cn(
-                      "h-2 rounded-full transition-all",
-                      i === index ? "w-6 bg-forest" : "w-2 bg-white/80",
-                    )}
-                  />
-                ))}
-              </div>
+              {videos.length > 1 && (
+                <div className="absolute bottom-4 left-1/2 flex -translate-x-1/2 gap-1.5">
+                  {videos.map((video, i) => (
+                    <button
+                      key={video.id}
+                      type="button"
+                      aria-label={`Vidéo ${i + 1}`}
+                      onClick={() => setIndex(i)}
+                      className={cn(
+                        "h-2 rounded-full transition-all",
+                        i === safeIndex ? "w-6 bg-forest" : "w-2 bg-white/80",
+                      )}
+                    />
+                  ))}
+                </div>
+              )}
             </HeroMediaFrame>
           </HeroReveal>
         </div>

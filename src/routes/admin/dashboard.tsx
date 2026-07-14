@@ -1,13 +1,9 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { useAnalyticsOverview } from "@/api";
-import type { Booking } from "@/api/types";
-import { BookingEditDialog } from "@/components/admin/booking-edit-dialog";
+import { useAnalyticsOverview, reservationStatusLabel } from "@/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Calendar, Users, Package, TrendingUp, Pencil } from "lucide-react";
+import { Calendar, Users, Package, TrendingUp } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { useAuth } from "@/lib/auth";
 import {
   ResponsiveContainer,
   LineChart,
@@ -26,8 +22,6 @@ export const Route = createFileRoute("/admin/dashboard")({
 });
 
 function AdminDashboardPage() {
-  const { canWrite } = useAuth();
-  const [editingBooking, setEditingBooking] = useState<Booking | null>(null);
   const { data, isLoading, isError, error, refetch } = useAnalyticsOverview();
 
   if (isLoading) {
@@ -69,8 +63,8 @@ function AdminDashboardPage() {
       <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         <StatCard title="Réservations aujourd'hui" value={data.bookingsToday} icon={Calendar} />
         <StatCard title="Réservations ce mois" value={data.bookingsThisMonth} icon={TrendingUp} />
-        <StatCard title="Clients" value={data.totalClients} icon={Users} />
-        <StatCard title="Offres actives" value={data.activeOffers} icon={Package} />
+        <StatCard title="Clients ce mois" value={data.totalClients} icon={Users} />
+        <StatCard title="Voyages actifs" value={data.activeOffers} icon={Package} />
       </div>
 
       <div className="grid gap-4 lg:grid-cols-3">
@@ -117,7 +111,7 @@ function AdminDashboardPage() {
       <div className="grid gap-4 lg:grid-cols-2">
         <Card>
           <CardHeader>
-            <CardTitle className="text-base">Offres populaires</CardTitle>
+            <CardTitle className="text-base">Voyages populaires</CardTitle>
           </CardHeader>
           <CardContent className="h-56">
             <ResponsiveContainer width="100%" height="100%">
@@ -138,37 +132,21 @@ function AdminDashboardPage() {
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              {data.recentBookings.map((b) => (
-                <div key={b.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 text-sm">
+              {data.recentBookings.map((r) => (
+                <div key={r.id} className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 text-sm">
                   <div className="min-w-0">
-                    <div className="font-medium">{b.bookingRef}</div>
+                    <div className="font-medium">{r.bookingRef}</div>
                     <div className="text-muted-foreground">
-                      {b.firstName} {b.lastName} · {b.participants} pers.
+                      {r.firstName} {r.lastName} · {r.trip?.title ?? "Voyage"}
                     </div>
-                    {b.phone ? (
-                      <a href={`tel:${b.phone}`} className="text-xs text-foreground hover:underline">
-                        {b.phone}
-                      </a>
-                    ) : (
-                      <span className="text-xs text-muted-foreground">Pas de téléphone</span>
-                    )}
+                    <div className="text-xs text-muted-foreground">{r.location}</div>
+                    <a href={`tel:${r.phone}`} className="text-xs text-foreground hover:underline">
+                      {r.phone}
+                    </a>
                   </div>
-                  <div className="flex shrink-0 items-center gap-2">
-                    <span className="rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
-                      {b.status}
-                    </span>
-                    {canWrite && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        onClick={() => setEditingBooking(b)}
-                        aria-label="Modifier la réservation"
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    )}
-                  </div>
+                  <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium text-foreground">
+                    {reservationStatusLabel(r.status)}
+                  </span>
                 </div>
               ))}
               {data.recentBookings.length === 0 && (
@@ -181,14 +159,6 @@ function AdminDashboardPage() {
           </CardContent>
         </Card>
       </div>
-
-      <BookingEditDialog
-        booking={editingBooking}
-        open={Boolean(editingBooking)}
-        onOpenChange={(open) => {
-          if (!open) setEditingBooking(null);
-        }}
-      />
     </div>
   );
 }

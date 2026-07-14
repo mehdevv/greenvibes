@@ -162,7 +162,7 @@ export interface AnalyticsOverview {
   fillRatePercent: number;
   bookingsTrend: { date: string; count: number }[];
   topOffers: { title: string; bookings: number }[];
-  recentBookings: Booking[];
+  recentBookings: Reservation[];
 }
 
 export interface CreateBookingInput {

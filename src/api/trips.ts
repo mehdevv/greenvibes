@@ -168,6 +168,38 @@ export function useUpdateTrip() {
   });
 }
 
+export function useUpdateTripCapacity() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async ({ id, capacity }: { id: string; capacity: number }) => {
+      if (capacity < 1) throw new Error("La capacité doit être au moins 1.");
+
+      const { data: trip, error: fetchError } = await supabase
+        .from("trips")
+        .select("spots_taken")
+        .eq("id", id)
+        .single();
+      if (fetchError) throw new Error(formatPostgrestError(fetchError));
+
+      if (capacity < Number(trip.spots_taken)) {
+        throw new Error(
+          `Impossible : ${trip.spots_taken} place(s) déjà confirmée(s). Réduisez les confirmations ou annulez des réservations.`,
+        );
+      }
+
+      const { data, error } = await supabase
+        .from("trips")
+        .update({ capacity })
+        .eq("id", id)
+        .select()
+        .single();
+      if (error) throw new Error(formatPostgrestError(error));
+      return mapTrip(data);
+    },
+    onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
+  });
+}
+
 export function useListAllTripsAdmin() {
   return useQuery({
     queryKey: ["trips", "admin"],

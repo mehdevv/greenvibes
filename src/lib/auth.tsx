@@ -74,7 +74,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setHasSession(false);
   }, []);
 
-  const canWrite = user?.role !== "reader";
+  const canWrite = Boolean(user && user.role !== "reader");
 
   const value = useMemo(
     () => ({

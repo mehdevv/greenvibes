@@ -1,7 +1,7 @@
 import { useListTrips, useTripsRealtime } from "@/api";
+import { EditableBlockHeader } from "@/components/admin/editable-text";
 import { TripCardV2 } from "@/components/public/trip-card-v2";
 import {
-  HeroBlockHeader,
   HeroContainer,
   HorizontalScroll,
   HorizontalScrollItem,
@@ -19,9 +19,10 @@ export function TripsGrid() {
       className="scroll-mt-24 rounded-b-3xl bg-sand pb-20 pt-10 md:rounded-b-[2.5rem] md:pb-28 md:pt-14 lg:rounded-b-[3rem] lg:pb-32"
     >
       <HeroContainer>
-        <HeroBlockHeader
+        <EditableBlockHeader
           showChevron
           title="Voyages à découvrir"
+          titleKey="trips.title"
         />
       </HeroContainer>
 
