@@ -1,4 +1,16 @@
-export type AdminRole = "super_admin" | "manager" | "commercial" | "reader";
+export type AdminRole = "super_admin" | "manager" | "commercial" | "reader" | "worker";
+
+export type AdminResourcePermissions = {
+  read: boolean;
+  create: boolean;
+  update: boolean;
+  delete: boolean;
+};
+
+export type AdminPermissions = {
+  trips: AdminResourcePermissions;
+  reservations: AdminResourcePermissions;
+};
 
 export type OfferType = "mer" | "montagne" | "culture" | "aventure";
 
@@ -16,6 +28,7 @@ export interface AdminProfile {
   email: string;
   fullName: string;
   role: AdminRole;
+  permissions: AdminPermissions;
   createdAt: string;
 }
 
@@ -197,6 +210,7 @@ export interface TripMedia {
 
 export interface Trip {
   id: string;
+  slug: string | null;
   title: string;
   description: string;
   photoUrl: string | null;

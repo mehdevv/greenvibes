@@ -4,7 +4,8 @@ import type { Trip, TripMedia, TripMediaType } from "./types";
 import { DEMO_TRIPS } from "@/lib/demo-trips";
 import { isTripPublicVisible } from "@/lib/trip-dates";
 import { PLACEHOLDER_IMAGES } from "@/lib/constants";
-import { getPublicImageUrl, supabase } from "@/lib/supabase";
+import { resolveTripSlug } from "@/lib/trip-slug";
+import { getPublicImageUrl, getActiveSupabase } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
 
 const DEMO_PHOTO_BY_ID: Record<string, string> = {
@@ -37,6 +38,7 @@ export function mapTrip(row: Record<string, unknown>, media: TripMedia[] = []): 
 
   return {
     id,
+    slug: row.slug ? String(row.slug) : null,
     title: String(row.title),
     description: String(row.description ?? ""),
     photoUrl,
@@ -58,7 +60,7 @@ async function fetchTripMediaMap(tripIds: string[]): Promise<Map<string, TripMed
   const map = new Map<string, TripMedia[]>();
   if (!tripIds.length) return map;
 
-  const { data, error } = await supabase
+  const { data, error } = await getActiveSupabase()
     .from("trip_media")
     .select("*")
     .in("trip_id", tripIds)
@@ -79,7 +81,7 @@ async function fetchTripMediaMap(tripIds: string[]): Promise<Map<string, TripMed
 }
 
 async function archiveExpiredTrips() {
-  const { error } = await supabase.rpc("archive_expired_trips");
+  const { error } = await getActiveSupabase().rpc("archive_expired_trips");
   if (error && error.code !== "42883") {
     // function missing before migration — ignore
     console.warn("archive_expired_trips:", error.message);
@@ -89,7 +91,7 @@ async function archiveExpiredTrips() {
 async function fetchActiveTrips(): Promise<Trip[]> {
   await archiveExpiredTrips();
 
-  let { data, error } = await supabase
+  let { data, error } = await getActiveSupabase()
     .from("trips")
     .select("*")
     .eq("active", true)
@@ -98,7 +100,7 @@ async function fetchActiveTrips(): Promise<Trip[]> {
     .order("created_at", { ascending: false });
 
   if (error?.message?.includes("archived") || error?.code === "42703") {
-    ({ data, error } = await supabase
+    ({ data, error } = await getActiveSupabase()
       .from("trips")
       .select("*")
       .eq("active", true)
@@ -121,7 +123,7 @@ async function fetchActiveTrips(): Promise<Trip[]> {
 }
 
 async function fetchTripById(id: string): Promise<Trip | null> {
-  const { data, error } = await supabase.from("trips").select("*").eq("id", id).maybeSingle();
+  const { data, error } = await getActiveSupabase().from("trips").select("*").eq("id", id).maybeSingle();
   if (error) {
     if (error.code === "42P01") {
       return DEMO_TRIPS.find((t) => t.id === id) ?? null;
@@ -131,6 +133,26 @@ async function fetchTripById(id: string): Promise<Trip | null> {
   if (!data) return DEMO_TRIPS.find((t) => t.id === id) ?? null;
   const mediaMap = await fetchTripMediaMap([id]);
   return mapTrip(data, mediaMap.get(id) ?? []);
+}
+
+async function fetchTripBySlug(slug: string): Promise<Trip | null> {
+  const normalized = slug.trim().toLowerCase();
+  const { data, error } = await getActiveSupabase()
+    .from("trips")
+    .select("*")
+    .ilike("slug", normalized)
+    .maybeSingle();
+
+  if (error) {
+    if (error.code === "42P01" || error.code === "42703") {
+      return DEMO_TRIPS.find((t) => t.slug === normalized) ?? null;
+    }
+    throw new Error(formatPostgrestError(error));
+  }
+  if (!data) return DEMO_TRIPS.find((t) => t.slug === normalized) ?? null;
+  const tripId = String(data.id);
+  const mediaMap = await fetchTripMediaMap([tripId]);
+  return mapTrip(data, mediaMap.get(tripId) ?? []);
 }
 
 export function useListTrips() {
@@ -148,11 +170,19 @@ export function useGetTrip(id: string) {
   });
 }
 
+export function useGetTripBySlug(slug: string) {
+  return useQuery({
+    queryKey: ["trips", "slug", slug],
+    enabled: Boolean(slug),
+    queryFn: () => fetchTripBySlug(slug),
+  });
+}
+
 export function useTripsRealtime() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
+    const channel = getActiveSupabase()
       .channel("trips-realtime")
       .on(
         "postgres_changes",
@@ -171,7 +201,7 @@ export function useTripsRealtime() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      getActiveSupabase().removeChannel(channel);
     };
   }, [qc]);
 }
@@ -187,13 +217,15 @@ export type TripInput = {
   capacity: number;
   active: boolean;
   departureDate?: string | null;
+  slug?: string | null;
 };
 
 export function useCreateTrip() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: TripInput) => {
-      const { data, error } = await supabase
+      const slug = resolveTripSlug(input.slug, input.title);
+      const { data, error } = await getActiveSupabase()
         .from("trips")
         .insert({
           title: input.title,
@@ -206,6 +238,7 @@ export function useCreateTrip() {
           capacity: input.capacity,
           active: input.active,
           departure_date: input.departureDate || null,
+          slug,
         })
         .select()
         .single();
@@ -220,7 +253,8 @@ export function useUpdateTrip() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async ({ id, ...input }: TripInput & { id: string }) => {
-      const { data, error } = await supabase
+      const slug = resolveTripSlug(input.slug, input.title);
+      const { data, error } = await getActiveSupabase()
         .from("trips")
         .update({
           title: input.title,
@@ -233,6 +267,7 @@ export function useUpdateTrip() {
           capacity: input.capacity,
           active: input.active,
           departure_date: input.departureDate || null,
+          slug,
           ...(input.active ? { archived: false } : {}),
         })
         .eq("id", id)
@@ -249,10 +284,10 @@ export function useDeleteTrip() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error: resError } = await supabase.from("reservations").delete().eq("trip_id", id);
+      const { error: resError } = await getActiveSupabase().from("reservations").delete().eq("trip_id", id);
       if (resError) throw new Error(formatPostgrestError(resError));
 
-      const { error } = await supabase.from("trips").delete().eq("id", id);
+      const { error } = await getActiveSupabase().from("trips").delete().eq("id", id);
       if (error) throw new Error(formatPostgrestError(error));
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),
@@ -265,7 +300,7 @@ export function useUpdateTripCapacity() {
     mutationFn: async ({ id, capacity }: { id: string; capacity: number }) => {
       if (capacity < 1) throw new Error("La capacité doit être au moins 1.");
 
-      const { data: trip, error: fetchError } = await supabase
+      const { data: trip, error: fetchError } = await getActiveSupabase()
         .from("trips")
         .select("spots_taken")
         .eq("id", id)
@@ -278,7 +313,7 @@ export function useUpdateTripCapacity() {
         );
       }
 
-      const { data, error } = await supabase
+      const { data, error } = await getActiveSupabase()
         .from("trips")
         .update({ capacity })
         .eq("id", id)
@@ -297,7 +332,7 @@ export function useListAllTripsAdmin() {
     queryFn: async (): Promise<Trip[]> => {
       await archiveExpiredTrips();
 
-      const { data, error } = await supabase
+      const { data, error } = await getActiveSupabase()
         .from("trips")
         .select("*")
         .order("archived", { ascending: true })
@@ -323,7 +358,7 @@ export function useAddTripMedia() {
       url: string;
       mediaType: TripMediaType;
     }) => {
-      const { data, error } = await supabase
+      const { data, error } = await getActiveSupabase()
         .from("trip_media")
         .insert({
           trip_id: tripId,
@@ -344,7 +379,7 @@ export function useRemoveTripMedia() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase.from("trip_media").delete().eq("id", id);
+      const { error } = await getActiveSupabase().from("trip_media").delete().eq("id", id);
       if (error) throw new Error(formatPostgrestError(error));
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ["trips"] }),

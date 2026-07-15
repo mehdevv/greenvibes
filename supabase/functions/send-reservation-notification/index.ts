@@ -44,7 +44,7 @@ Deno.serve(async (req) => {
         <p><strong>Statut :</strong> ${reservation.status}</p>
         <p><strong>Voyageur :</strong> ${reservation.first_name} ${reservation.last_name}</p>
         <p><strong>Téléphone :</strong> ${reservation.phone}</p>
-        <p><strong>Localisation :</strong> ${reservation.location}</p>
+        <p><strong>Adresse :</strong> ${reservation.location}</p>
         <ul>
           <li>Sortie : ${trip?.title ?? "—"}</li>
           <li>Durée : ${trip?.duration ?? "—"}</li>

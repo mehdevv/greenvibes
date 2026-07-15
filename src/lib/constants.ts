@@ -83,6 +83,7 @@ export const WILAYAS = [
 export const AGENCY_CONTACT = {
   phone: "+213559841220",
   phoneDisplay: "05 59 84 12 20",
+  email: "clientgreenvibes@gmail.com",
   instagram: "https://www.instagram.com/gree.n_vibes/",
   facebook: "https://www.facebook.com/p/green-vibes-100093088322983/",
   name: "GreenVibes",

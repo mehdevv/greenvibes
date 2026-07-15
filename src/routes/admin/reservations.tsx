@@ -19,8 +19,12 @@ import { formatPrice } from "@/lib/constants";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/reservations")({
-  component: AdminReservationsPage,
+  component: AdminReservationsRoute,
 });
+
+function AdminReservationsRoute() {
+  return <ReservationsPage />;
+}
 
 function formatDate(iso: string) {
   try {
@@ -33,8 +37,11 @@ function formatDate(iso: string) {
   }
 }
 
-function AdminReservationsPage() {
-  const { canWrite } = useAuth();
+export function ReservationsPage() {
+  const { can } = useAuth();
+  const canResUpdate = can("reservations", "update");
+  const canResDelete = can("reservations", "delete");
+  const showResActions = canResUpdate || canResDelete;
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<ReservationStatus | "all">("all");
   useReservationsRealtime();
@@ -113,12 +120,12 @@ function AdminReservationsPage() {
                   <th className="pb-3 pr-4">Prénom</th>
                   <th className="pb-3 pr-4">Nom</th>
                   <th className="pb-3 pr-4">Téléphone</th>
-                  <th className="pb-3 pr-4">Localisation</th>
+                  <th className="pb-3 pr-4">Adresse</th>
                   <th className="pb-3 pr-4">Voyage</th>
                   <th className="pb-3 pr-4">Prix</th>
                   <th className="pb-3 pr-4">Date</th>
                   <th className="pb-3 pr-4">Statut</th>
-                  {canWrite && <th className="pb-3">Actions</th>}
+                  {showResActions && <th className="pb-3">Actions</th>}
                 </tr>
               </thead>
               <tbody>
@@ -139,7 +146,7 @@ function AdminReservationsPage() {
                     </td>
                     <td className="py-3 pr-4 whitespace-nowrap">{formatDate(r.createdAt)}</td>
                     <td className="py-3 pr-4">
-                      {canWrite ? (
+                      {canResUpdate ? (
                         <Select
                           value={r.status}
                           onValueChange={async (v) => {
@@ -167,10 +174,10 @@ function AdminReservationsPage() {
                         reservationStatusLabel(r.status)
                       )}
                     </td>
-                    {canWrite && (
+                    {showResActions && (
                       <td className="py-3">
                         <div className="flex gap-1">
-                          {r.status !== "cancelled" && (
+                          {canResUpdate && r.status !== "cancelled" && (
                             <Button
                               variant="ghost"
                               size="sm"
@@ -187,11 +194,12 @@ function AdminReservationsPage() {
                               Annuler
                             </Button>
                           )}
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-destructive"
-                            onClick={async () => {
+                          {canResDelete && (
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive"
+                              onClick={async () => {
                               if (!window.confirm(`Supprimer ${r.firstName} ${r.lastName} ?`)) return;
                               try {
                                 await deleteReservation.mutateAsync(r.id);
@@ -203,6 +211,7 @@ function AdminReservationsPage() {
                           >
                             Supprimer
                           </Button>
+                          )}
                         </div>
                       </td>
                     )}

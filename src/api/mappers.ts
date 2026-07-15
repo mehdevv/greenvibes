@@ -1,5 +1,7 @@
 import type {
   AdminProfile,
+  AdminPermissions,
+  AdminRole,
   BlogPost,
   Booking,
   Client,
@@ -10,6 +12,7 @@ import type {
   OfferImage,
   TripSession,
 } from "./types";
+import { normalizePermissions } from "@/lib/admin-permissions";
 
 function toNumber(value: unknown): number {
   if (typeof value === "number") return value;
@@ -17,12 +20,21 @@ function toNumber(value: unknown): number {
   return 0;
 }
 
+function parsePermissions(value: unknown, role: AdminRole): AdminPermissions {
+  if (!value || typeof value !== "object") {
+    return normalizePermissions(null, role);
+  }
+  return normalizePermissions(value as Partial<AdminPermissions>, role);
+}
+
 export function mapAdminProfile(row: Record<string, unknown>): AdminProfile {
+  const role = row.role as AdminRole;
   return {
     id: String(row.id),
     email: String(row.email ?? ""),
     fullName: String(row.full_name ?? ""),
-    role: row.role as AdminProfile["role"],
+    role,
+    permissions: parsePermissions(row.permissions, role),
     createdAt: String(row.created_at),
   };
 }

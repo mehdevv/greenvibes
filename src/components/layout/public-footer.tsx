@@ -79,7 +79,10 @@ export function PublicFooter() {
               </a>
             </li>
             <li className="flex items-center gap-2">
-              <Mail className="h-4 w-4 shrink-0 text-leaf" /> hello@greenvibes.dz
+              <Mail className="h-4 w-4 shrink-0 text-leaf" />{" "}
+              <a href={`mailto:${AGENCY_CONTACT.email}`} className="hover:text-white">
+                {AGENCY_CONTACT.email}
+              </a>
             </li>
           </ul>
         </Reveal>

@@ -161,6 +161,8 @@ export function ReservationSuccessModal({
             <span>
               Garde ton téléphone allumé — nous joignons au{" "}
               <strong className="text-forest">{AGENCY_CONTACT.phoneDisplay}</strong>
+              {" "}ou par email{" "}
+              <strong className="text-forest">{AGENCY_CONTACT.email}</strong>
             </span>
           </div>
 

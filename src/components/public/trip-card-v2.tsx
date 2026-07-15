@@ -99,16 +99,29 @@ export function TripCardV2({ trip, horizontal }: TripCardProps) {
           </div>
         </div>
 
-        <Link
-          to="/reservation/$tripId"
-          params={{ tripId: trip.id }}
-          className={cn(
-            heroBtnClasses(full ? "outline" : "accent", { full: true, size: "md" }),
-            "mt-6 py-3.5",
-          )}
-        >
-          {full ? "Liste d'attente" : "Réserver"}
-        </Link>
+        {trip.slug ? (
+          <Link
+            to="/r/$slug"
+            params={{ slug: trip.slug }}
+            className={cn(
+              heroBtnClasses(full ? "outline" : "accent", { full: true, size: "md" }),
+              "mt-6 py-3.5",
+            )}
+          >
+            {full ? "Liste d'attente" : "Réserver"}
+          </Link>
+        ) : (
+          <Link
+            to="/reservation/$tripId"
+            params={{ tripId: trip.id }}
+            className={cn(
+              heroBtnClasses(full ? "outline" : "accent", { full: true, size: "md" }),
+              "mt-6 py-3.5",
+            )}
+          >
+            {full ? "Liste d'attente" : "Réserver"}
+          </Link>
+        )}
       </div>
     </HeroCard>
   );

@@ -7,38 +7,48 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { AdminProfile } from "@/api/types";
 import { mapAdminProfile } from "@/api/mappers";
-import { supabase } from "@/lib/supabase";
+import {
+  canAccessEmployeePortal,
+  canAccessOwnerAdmin,
+  hasAdminPermission,
+  hasAnyWritePermission,
+  type AdminAction,
+  type AdminResource,
+} from "@/lib/admin-permissions";
+import { usePortal } from "@/lib/portal";
+import { supabaseAdmin, supabaseEmployee } from "@/lib/supabase";
 
-interface AuthState {
+export interface AuthState {
   user: AdminProfile | null;
   isLoading: boolean;
   hasSession: boolean;
   canWrite: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
+  isSuperAdmin: boolean;
+  can: (resource: AdminResource, action: AdminAction) => boolean;
+  signIn: (email: string, password: string) => Promise<AdminProfile | null>;
   signOut: () => Promise<void>;
   refresh: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthState | null>(null);
-
-export function AuthProvider({ children }: { children: ReactNode }) {
+function useAuthState(client: SupabaseClient): AuthState {
   const [user, setUser] = useState<AdminProfile | null>(null);
   const [hasSession, setHasSession] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
-    const { data: { user: authUser } } = await supabase.auth.getUser();
+    const { data: { user: authUser } } = await client.auth.getUser();
     if (!authUser) {
       setUser(null);
       setHasSession(false);
-      return;
+      return null;
     }
 
     setHasSession(true);
 
-    const { data, error } = await supabase
+    const { data, error } = await client
       .from("admin_profiles")
       .select("*")
       .eq("id", authUser.id)
@@ -46,54 +56,106 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     if (error || !data) {
       setUser(null);
-      return;
+      return null;
     }
 
-    setUser(mapAdminProfile(data));
-  }, []);
+    const profile = mapAdminProfile(data);
+    setUser(profile);
+    return profile;
+  }, [client]);
 
   useEffect(() => {
     loadProfile().finally(() => setIsLoading(false));
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+    const { data: { subscription } } = client.auth.onAuthStateChange(() => {
       loadProfile();
     });
 
     return () => subscription.unsubscribe();
-  }, [loadProfile]);
+  }, [client, loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    const { error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw error;
-    await loadProfile();
-  }, [loadProfile]);
+    return loadProfile();
+  }, [client, loadProfile]);
 
   const signOut = useCallback(async () => {
-    await supabase.auth.signOut();
+    await client.auth.signOut();
     setUser(null);
     setHasSession(false);
-  }, []);
+  }, [client]);
 
-  const canWrite = Boolean(user && user.role !== "reader");
+  const can = useCallback(
+    (resource: AdminResource, action: AdminAction) => hasAdminPermission(user, resource, action),
+    [user],
+  );
 
-  const value = useMemo(
+  const canWrite = hasAnyWritePermission(user);
+  const isSuperAdmin = user?.role === "super_admin";
+
+  return useMemo(
     () => ({
       user,
       isLoading,
       hasSession,
       canWrite,
+      isSuperAdmin,
+      can,
       signIn,
       signOut,
       refresh: loadProfile,
     }),
-    [user, isLoading, hasSession, canWrite, signIn, signOut, loadProfile],
+    [user, isLoading, hasSession, canWrite, isSuperAdmin, can, signIn, signOut, loadProfile],
   );
+}
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+const AdminAuthContext = createContext<AuthState | null>(null);
+const EmployeeAuthContext = createContext<AuthState | null>(null);
+
+export function AdminAuthProvider({ children }: { children: ReactNode }) {
+  const state = useAuthState(supabaseAdmin);
+  return <AdminAuthContext.Provider value={state}>{children}</AdminAuthContext.Provider>;
+}
+
+export function EmployeeAuthProvider({ children }: { children: ReactNode }) {
+  const state = useAuthState(supabaseEmployee);
+  return <EmployeeAuthContext.Provider value={state}>{children}</EmployeeAuthContext.Provider>;
+}
+
+/** Backward-compatible root wrapper */
+export function AuthProvider({ children }: { children: ReactNode }) {
+  return (
+    <AdminAuthProvider>
+      <EmployeeAuthProvider>{children}</EmployeeAuthProvider>
+    </AdminAuthProvider>
+  );
+}
+
+export function useAdminAuth() {
+  const ctx = useContext(AdminAuthContext);
+  if (!ctx) throw new Error("useAdminAuth must be used within AdminAuthProvider");
+  return ctx;
+}
+
+export function useEmployeeAuth() {
+  const ctx = useContext(EmployeeAuthContext);
+  if (!ctx) throw new Error("useEmployeeAuth must be used within EmployeeAuthProvider");
+  return ctx;
 }
 
 export function useAuth() {
-  const ctx = useContext(AuthContext);
+  const portal = usePortal();
+  const admin = useContext(AdminAuthContext);
+  const employee = useContext(EmployeeAuthContext);
+  const ctx = portal === "employee" ? employee : admin;
   if (!ctx) throw new Error("useAuth must be used within AuthProvider");
   return ctx;
 }
+
+export function useCanAccessAdmin() {
+  const { user, isLoading } = useAuth();
+  return { allowed: canAccessOwnerAdmin(user), isLoading };
+}
+
+export { canAccessEmployeePortal, canAccessOwnerAdmin };

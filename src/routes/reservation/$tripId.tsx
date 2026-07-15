@@ -7,7 +7,6 @@ import {
   tripAvailabilityBarColor,
   tripAvailabilityLabel,
   tripSpotsRemaining,
-  WILAYAS,
 } from "@/lib/constants";
 import {
   HeroBadge,
@@ -20,6 +19,7 @@ import {
   HeroTitle,
 } from "@/components/public/hero-ui";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ReservationReceipt } from "@/components/public/reservation-receipt";
@@ -320,20 +320,16 @@ function ReservationPage() {
                 />
               </div>
               <div>
-                <Label>Localisation (ville / wilaya)</Label>
-                <HeroInput
+                <Label>Adresse</Label>
+                <Textarea
                   required
-                  list="wilayas"
-                  placeholder="Ex. Béjaïa"
+                  rows={2}
+                  placeholder="Ex. 12 rue des pins, Béjaïa"
                   value={form.location}
                   onChange={(e) => setForm({ ...form, location: e.target.value })}
-                  className="mt-1"
+                  className="mt-1 resize-none"
+                  autoComplete="street-address"
                 />
-                <datalist id="wilayas">
-                  {WILAYAS.map((w) => (
-                    <option key={w.slug} value={w.name} />
-                  ))}
-                </datalist>
               </div>
               <HeroButton
                 type="submit"

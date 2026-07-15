@@ -1,4 +1,4 @@
-import { Facebook, Instagram, MapPin, Phone } from "lucide-react";
+import { Facebook, Instagram, Mail, MapPin, Phone } from "lucide-react";
 import { EditableBlockHeader } from "@/components/admin/editable-text";
 import { AGENCY_CONTACT } from "@/lib/constants";
 import {
@@ -36,6 +36,16 @@ export function ContactSection() {
                   <Phone className="h-5 w-5" />
                 </span>
                 {AGENCY_CONTACT.phoneDisplay}
+              </a>
+
+              <a
+                href={`mailto:${AGENCY_CONTACT.email}`}
+                className="flex items-center gap-3 text-sm text-muted-foreground transition hover:text-forest"
+              >
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-border/40">
+                  <Mail className="h-5 w-5 text-forest" />
+                </span>
+                <span className="pt-2.5 font-medium text-foreground">{AGENCY_CONTACT.email}</span>
               </a>
 
               <a

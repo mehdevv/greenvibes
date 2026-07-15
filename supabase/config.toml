@@ -17,6 +17,9 @@ verify_jwt = false
 [functions.send-reservation-notification]
 verify_jwt = false
 
+[functions.manage-admin-user]
+verify_jwt = true
+
 # Legacy v1 booking emails (optional)
 [functions.send-booking-confirmation]
 verify_jwt = true

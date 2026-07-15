@@ -11,6 +11,7 @@ function futureDate(daysFromNow: number) {
 export const DEMO_TRIPS: Trip[] = [
   {
     id: "a1000000-0000-4000-8000-000000000001",
+    slug: "criques-tichy",
     title: "Criques de Tichy — Demi-journée",
     description:
       "On part ensemble découvrir les criques emblématiques de Tichy : eau claire, falaises et bonne humeur.",
@@ -29,6 +30,7 @@ export const DEMO_TRIPS: Trip[] = [
   },
   {
     id: "a1000000-0000-4000-8000-000000000002",
+    slug: "week-end-decouverte",
     title: "Week-end découverte",
     description: "Deux jours entre mer et montagne avec nuit chez l'habitant.",
     photoUrl: PLACEHOLDER_IMAGES.gouraya,
@@ -46,6 +48,7 @@ export const DEMO_TRIPS: Trip[] = [
   },
   {
     id: "a1000000-0000-4000-8000-000000000003",
+    slug: "gorges-kherrata",
     title: "Gorges de Kherrata",
     description: "Sentiers, ponts naturels et panoramas — une journée d'aventure en petit groupe.",
     photoUrl: PLACEHOLDER_IMAGES.kherrata,
@@ -63,6 +66,7 @@ export const DEMO_TRIPS: Trip[] = [
   },
   {
     id: "a1000000-0000-4000-8000-000000000004",
+    slug: "corniche-coucher-soleil",
     title: "Corniche — Soirée coucher de soleil",
     description: "Balade sur la corniche, thé et coucher de soleil sur la Méditerranée.",
     photoUrl: PLACEHOLDER_IMAGES.corniche,

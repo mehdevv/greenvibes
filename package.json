@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "supabase:login": "supabase login",
     "supabase:link": "supabase link --project-ref loubwjuviwvjbeyxabyw",
-    "supabase:deploy": "supabase functions deploy setup-admin --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy create-reservation --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy send-reservation-notification --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw"
+    "supabase:deploy": "supabase functions deploy setup-admin --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy create-reservation --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy send-reservation-notification --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy manage-admin-user --project-ref loubwjuviwvjbeyxabyw"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",

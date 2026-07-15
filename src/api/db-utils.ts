@@ -51,6 +51,9 @@ export function formatPostgrestError(error: {
     return "Type d'offre invalide.";
   }
   if (error.code === "23505") {
+    if (error.message?.includes("slug") || error.details?.includes("slug")) {
+      return "Ce lien court est déjà utilisé par une autre offre.";
+    }
     return "Ce slug est déjà utilisé par une autre offre.";
   }
   if (error.code === "PGRST116") {

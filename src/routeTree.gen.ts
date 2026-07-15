@@ -13,6 +13,7 @@ import { Route as ReservationsRouteImport } from './routes/reservations'
 import { Route as GalerieRouteImport } from './routes/galerie'
 import { Route as ContactRouteImport } from './routes/contact'
 import { Route as AProposRouteImport } from './routes/a-propos'
+import { Route as EmployeRouteRouteImport } from './routes/employe/route'
 import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ReservationIndexRouteImport } from './routes/reservation/index'
@@ -21,7 +22,12 @@ import { Route as DestinationsIndexRouteImport } from './routes/destinations/ind
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
 import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ReservationTripIdRouteImport } from './routes/reservation/$tripId'
+import { Route as RSlugRouteImport } from './routes/r/$slug'
 import { Route as OffresSlugRouteImport } from './routes/offres/$slug'
+import { Route as EmployeTripsRouteImport } from './routes/employe/trips'
+import { Route as EmployeReservationsRouteImport } from './routes/employe/reservations'
+import { Route as EmployeLoginRouteImport } from './routes/employe/login'
+import { Route as EmployeInscriptionsRouteImport } from './routes/employe/inscriptions'
 import { Route as DestinationsSlugRouteImport } from './routes/destinations/$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
 import { Route as AdminTripsRouteImport } from './routes/admin/trips'
@@ -29,13 +35,19 @@ import { Route as AdminSessionsRouteImport } from './routes/admin/sessions'
 import { Route as AdminReservationsRouteImport } from './routes/admin/reservations'
 import { Route as AdminMessagesRouteImport } from './routes/admin/messages'
 import { Route as AdminLoginRouteImport } from './routes/admin/login'
+import { Route as AdminInscriptionsRouteImport } from './routes/admin/inscriptions'
 import { Route as AdminGalerieRouteImport } from './routes/admin/galerie'
+import { Route as AdminEquipeRouteImport } from './routes/admin/equipe'
 import { Route as AdminDestinationsRouteImport } from './routes/admin/destinations'
 import { Route as AdminDashboardRouteImport } from './routes/admin/dashboard'
 import { Route as AdminClientsRouteImport } from './routes/admin/clients'
 import { Route as AdminBlogRouteImport } from './routes/admin/blog'
+import { Route as EmployeTripsIndexRouteImport } from './routes/employe/trips/index'
+import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
 import { Route as AdminOffresIndexRouteImport } from './routes/admin/offres/index'
 import { Route as ReservationConfirmationRefRouteImport } from './routes/reservation/confirmation/$ref'
+import { Route as EmployeTripsTripIdRouteImport } from './routes/employe/trips/$tripId'
+import { Route as AdminTripsTripIdRouteImport } from './routes/admin/trips/$tripId'
 import { Route as AdminOffresNouveauRouteImport } from './routes/admin/offres/nouveau'
 import { Route as AdminOffresIdRouteImport } from './routes/admin/offres/$id'
 import { Route as AdminDestinationsDestinationIdRouteImport } from './routes/admin/destinations/$destinationId'
@@ -60,6 +72,11 @@ const ContactRoute = ContactRouteImport.update({
 const AProposRoute = AProposRouteImport.update({
   id: '/a-propos',
   path: '/a-propos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeRouteRoute = EmployeRouteRouteImport.update({
+  id: '/employe',
+  path: '/employe',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRouteRoute = AdminRouteRouteImport.update({
@@ -102,10 +119,35 @@ const ReservationTripIdRoute = ReservationTripIdRouteImport.update({
   path: '/reservation/$tripId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RSlugRoute = RSlugRouteImport.update({
+  id: '/r/$slug',
+  path: '/r/$slug',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OffresSlugRoute = OffresSlugRouteImport.update({
   id: '/offres/$slug',
   path: '/offres/$slug',
   getParentRoute: () => rootRouteImport,
+} as any)
+const EmployeTripsRoute = EmployeTripsRouteImport.update({
+  id: '/trips',
+  path: '/trips',
+  getParentRoute: () => EmployeRouteRoute,
+} as any)
+const EmployeReservationsRoute = EmployeReservationsRouteImport.update({
+  id: '/reservations',
+  path: '/reservations',
+  getParentRoute: () => EmployeRouteRoute,
+} as any)
+const EmployeLoginRoute = EmployeLoginRouteImport.update({
+  id: '/login',
+  path: '/login',
+  getParentRoute: () => EmployeRouteRoute,
+} as any)
+const EmployeInscriptionsRoute = EmployeInscriptionsRouteImport.update({
+  id: '/inscriptions',
+  path: '/inscriptions',
+  getParentRoute: () => EmployeRouteRoute,
 } as any)
 const DestinationsSlugRoute = DestinationsSlugRouteImport.update({
   id: '/destinations/$slug',
@@ -142,9 +184,19 @@ const AdminLoginRoute = AdminLoginRouteImport.update({
   path: '/login',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const AdminInscriptionsRoute = AdminInscriptionsRouteImport.update({
+  id: '/inscriptions',
+  path: '/inscriptions',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AdminGalerieRoute = AdminGalerieRouteImport.update({
   id: '/galerie',
   path: '/galerie',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminEquipeRoute = AdminEquipeRouteImport.update({
+  id: '/equipe',
+  path: '/equipe',
   getParentRoute: () => AdminRouteRoute,
 } as any)
 const AdminDestinationsRoute = AdminDestinationsRouteImport.update({
@@ -167,6 +219,16 @@ const AdminBlogRoute = AdminBlogRouteImport.update({
   path: '/blog',
   getParentRoute: () => AdminRouteRoute,
 } as any)
+const EmployeTripsIndexRoute = EmployeTripsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => EmployeTripsRoute,
+} as any)
+const AdminTripsIndexRoute = AdminTripsIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminTripsRoute,
+} as any)
 const AdminOffresIndexRoute = AdminOffresIndexRouteImport.update({
   id: '/offres/',
   path: '/offres/',
@@ -178,6 +240,16 @@ const ReservationConfirmationRefRoute =
     path: '/reservation/confirmation/$ref',
     getParentRoute: () => rootRouteImport,
   } as any)
+const EmployeTripsTripIdRoute = EmployeTripsTripIdRouteImport.update({
+  id: '/$tripId',
+  path: '/$tripId',
+  getParentRoute: () => EmployeTripsRoute,
+} as any)
+const AdminTripsTripIdRoute = AdminTripsTripIdRouteImport.update({
+  id: '/$tripId',
+  path: '/$tripId',
+  getParentRoute: () => AdminTripsRoute,
+} as any)
 const AdminOffresNouveauRoute = AdminOffresNouveauRouteImport.update({
   id: '/offres/nouveau',
   path: '/offres/nouveau',
@@ -212,6 +284,7 @@ const AdminDestinationsDestinationIdOffresOfferIdSessionsSessionIdRoute =
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
+  '/employe': typeof EmployeRouteRouteWithChildren
   '/a-propos': typeof AProposRoute
   '/contact': typeof ContactRoute
   '/galerie': typeof GalerieRoute
@@ -220,15 +293,22 @@ export interface FileRoutesByFullPath {
   '/admin/clients': typeof AdminClientsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/destinations': typeof AdminDestinationsRouteWithChildren
+  '/admin/equipe': typeof AdminEquipeRoute
   '/admin/galerie': typeof AdminGalerieRoute
+  '/admin/inscriptions': typeof AdminInscriptionsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/sessions': typeof AdminSessionsRoute
-  '/admin/trips': typeof AdminTripsRoute
+  '/admin/trips': typeof AdminTripsRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
+  '/employe/inscriptions': typeof EmployeInscriptionsRoute
+  '/employe/login': typeof EmployeLoginRoute
+  '/employe/reservations': typeof EmployeReservationsRoute
+  '/employe/trips': typeof EmployeTripsRouteWithChildren
   '/offres/$slug': typeof OffresSlugRoute
+  '/r/$slug': typeof RSlugRoute
   '/reservation/$tripId': typeof ReservationTripIdRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
@@ -238,13 +318,18 @@ export interface FileRoutesByFullPath {
   '/admin/destinations/$destinationId': typeof AdminDestinationsDestinationIdRouteWithChildren
   '/admin/offres/$id': typeof AdminOffresIdRoute
   '/admin/offres/nouveau': typeof AdminOffresNouveauRoute
+  '/admin/trips/$tripId': typeof AdminTripsTripIdRoute
+  '/employe/trips/$tripId': typeof EmployeTripsTripIdRoute
   '/reservation/confirmation/$ref': typeof ReservationConfirmationRefRoute
   '/admin/offres/': typeof AdminOffresIndexRoute
+  '/admin/trips/': typeof AdminTripsIndexRoute
+  '/employe/trips/': typeof EmployeTripsIndexRoute
   '/admin/destinations/$destinationId/offres/$offerId': typeof AdminDestinationsDestinationIdOffresOfferIdRouteWithChildren
   '/admin/destinations/$destinationId/offres/$offerId/sessions/$sessionId': typeof AdminDestinationsDestinationIdOffresOfferIdSessionsSessionIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/employe': typeof EmployeRouteRouteWithChildren
   '/a-propos': typeof AProposRoute
   '/contact': typeof ContactRoute
   '/galerie': typeof GalerieRoute
@@ -253,15 +338,20 @@ export interface FileRoutesByTo {
   '/admin/clients': typeof AdminClientsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/destinations': typeof AdminDestinationsRouteWithChildren
+  '/admin/equipe': typeof AdminEquipeRoute
   '/admin/galerie': typeof AdminGalerieRoute
+  '/admin/inscriptions': typeof AdminInscriptionsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/sessions': typeof AdminSessionsRoute
-  '/admin/trips': typeof AdminTripsRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
+  '/employe/inscriptions': typeof EmployeInscriptionsRoute
+  '/employe/login': typeof EmployeLoginRoute
+  '/employe/reservations': typeof EmployeReservationsRoute
   '/offres/$slug': typeof OffresSlugRoute
+  '/r/$slug': typeof RSlugRoute
   '/reservation/$tripId': typeof ReservationTripIdRoute
   '/admin': typeof AdminIndexRoute
   '/blog': typeof BlogIndexRoute
@@ -271,8 +361,12 @@ export interface FileRoutesByTo {
   '/admin/destinations/$destinationId': typeof AdminDestinationsDestinationIdRouteWithChildren
   '/admin/offres/$id': typeof AdminOffresIdRoute
   '/admin/offres/nouveau': typeof AdminOffresNouveauRoute
+  '/admin/trips/$tripId': typeof AdminTripsTripIdRoute
+  '/employe/trips/$tripId': typeof EmployeTripsTripIdRoute
   '/reservation/confirmation/$ref': typeof ReservationConfirmationRefRoute
   '/admin/offres': typeof AdminOffresIndexRoute
+  '/admin/trips': typeof AdminTripsIndexRoute
+  '/employe/trips': typeof EmployeTripsIndexRoute
   '/admin/destinations/$destinationId/offres/$offerId': typeof AdminDestinationsDestinationIdOffresOfferIdRouteWithChildren
   '/admin/destinations/$destinationId/offres/$offerId/sessions/$sessionId': typeof AdminDestinationsDestinationIdOffresOfferIdSessionsSessionIdRoute
 }
@@ -280,6 +374,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRouteRouteWithChildren
+  '/employe': typeof EmployeRouteRouteWithChildren
   '/a-propos': typeof AProposRoute
   '/contact': typeof ContactRoute
   '/galerie': typeof GalerieRoute
@@ -288,15 +383,22 @@ export interface FileRoutesById {
   '/admin/clients': typeof AdminClientsRoute
   '/admin/dashboard': typeof AdminDashboardRoute
   '/admin/destinations': typeof AdminDestinationsRouteWithChildren
+  '/admin/equipe': typeof AdminEquipeRoute
   '/admin/galerie': typeof AdminGalerieRoute
+  '/admin/inscriptions': typeof AdminInscriptionsRoute
   '/admin/login': typeof AdminLoginRoute
   '/admin/messages': typeof AdminMessagesRoute
   '/admin/reservations': typeof AdminReservationsRoute
   '/admin/sessions': typeof AdminSessionsRoute
-  '/admin/trips': typeof AdminTripsRoute
+  '/admin/trips': typeof AdminTripsRouteWithChildren
   '/blog/$slug': typeof BlogSlugRoute
   '/destinations/$slug': typeof DestinationsSlugRoute
+  '/employe/inscriptions': typeof EmployeInscriptionsRoute
+  '/employe/login': typeof EmployeLoginRoute
+  '/employe/reservations': typeof EmployeReservationsRoute
+  '/employe/trips': typeof EmployeTripsRouteWithChildren
   '/offres/$slug': typeof OffresSlugRoute
+  '/r/$slug': typeof RSlugRoute
   '/reservation/$tripId': typeof ReservationTripIdRoute
   '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
@@ -306,8 +408,12 @@ export interface FileRoutesById {
   '/admin/destinations/$destinationId': typeof AdminDestinationsDestinationIdRouteWithChildren
   '/admin/offres/$id': typeof AdminOffresIdRoute
   '/admin/offres/nouveau': typeof AdminOffresNouveauRoute
+  '/admin/trips/$tripId': typeof AdminTripsTripIdRoute
+  '/employe/trips/$tripId': typeof EmployeTripsTripIdRoute
   '/reservation/confirmation/$ref': typeof ReservationConfirmationRefRoute
   '/admin/offres/': typeof AdminOffresIndexRoute
+  '/admin/trips/': typeof AdminTripsIndexRoute
+  '/employe/trips/': typeof EmployeTripsIndexRoute
   '/admin/destinations/$destinationId/offres/$offerId': typeof AdminDestinationsDestinationIdOffresOfferIdRouteWithChildren
   '/admin/destinations/$destinationId/offres/$offerId/sessions/$sessionId': typeof AdminDestinationsDestinationIdOffresOfferIdSessionsSessionIdRoute
 }
@@ -316,6 +422,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/employe'
     | '/a-propos'
     | '/contact'
     | '/galerie'
@@ -324,7 +431,9 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/dashboard'
     | '/admin/destinations'
+    | '/admin/equipe'
     | '/admin/galerie'
+    | '/admin/inscriptions'
     | '/admin/login'
     | '/admin/messages'
     | '/admin/reservations'
@@ -332,7 +441,12 @@ export interface FileRouteTypes {
     | '/admin/trips'
     | '/blog/$slug'
     | '/destinations/$slug'
+    | '/employe/inscriptions'
+    | '/employe/login'
+    | '/employe/reservations'
+    | '/employe/trips'
     | '/offres/$slug'
+    | '/r/$slug'
     | '/reservation/$tripId'
     | '/admin/'
     | '/blog/'
@@ -342,13 +456,18 @@ export interface FileRouteTypes {
     | '/admin/destinations/$destinationId'
     | '/admin/offres/$id'
     | '/admin/offres/nouveau'
+    | '/admin/trips/$tripId'
+    | '/employe/trips/$tripId'
     | '/reservation/confirmation/$ref'
     | '/admin/offres/'
+    | '/admin/trips/'
+    | '/employe/trips/'
     | '/admin/destinations/$destinationId/offres/$offerId'
     | '/admin/destinations/$destinationId/offres/$offerId/sessions/$sessionId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/employe'
     | '/a-propos'
     | '/contact'
     | '/galerie'
@@ -357,15 +476,20 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/dashboard'
     | '/admin/destinations'
+    | '/admin/equipe'
     | '/admin/galerie'
+    | '/admin/inscriptions'
     | '/admin/login'
     | '/admin/messages'
     | '/admin/reservations'
     | '/admin/sessions'
-    | '/admin/trips'
     | '/blog/$slug'
     | '/destinations/$slug'
+    | '/employe/inscriptions'
+    | '/employe/login'
+    | '/employe/reservations'
     | '/offres/$slug'
+    | '/r/$slug'
     | '/reservation/$tripId'
     | '/admin'
     | '/blog'
@@ -375,14 +499,19 @@ export interface FileRouteTypes {
     | '/admin/destinations/$destinationId'
     | '/admin/offres/$id'
     | '/admin/offres/nouveau'
+    | '/admin/trips/$tripId'
+    | '/employe/trips/$tripId'
     | '/reservation/confirmation/$ref'
     | '/admin/offres'
+    | '/admin/trips'
+    | '/employe/trips'
     | '/admin/destinations/$destinationId/offres/$offerId'
     | '/admin/destinations/$destinationId/offres/$offerId/sessions/$sessionId'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/employe'
     | '/a-propos'
     | '/contact'
     | '/galerie'
@@ -391,7 +520,9 @@ export interface FileRouteTypes {
     | '/admin/clients'
     | '/admin/dashboard'
     | '/admin/destinations'
+    | '/admin/equipe'
     | '/admin/galerie'
+    | '/admin/inscriptions'
     | '/admin/login'
     | '/admin/messages'
     | '/admin/reservations'
@@ -399,7 +530,12 @@ export interface FileRouteTypes {
     | '/admin/trips'
     | '/blog/$slug'
     | '/destinations/$slug'
+    | '/employe/inscriptions'
+    | '/employe/login'
+    | '/employe/reservations'
+    | '/employe/trips'
     | '/offres/$slug'
+    | '/r/$slug'
     | '/reservation/$tripId'
     | '/admin/'
     | '/blog/'
@@ -409,8 +545,12 @@ export interface FileRouteTypes {
     | '/admin/destinations/$destinationId'
     | '/admin/offres/$id'
     | '/admin/offres/nouveau'
+    | '/admin/trips/$tripId'
+    | '/employe/trips/$tripId'
     | '/reservation/confirmation/$ref'
     | '/admin/offres/'
+    | '/admin/trips/'
+    | '/employe/trips/'
     | '/admin/destinations/$destinationId/offres/$offerId'
     | '/admin/destinations/$destinationId/offres/$offerId/sessions/$sessionId'
   fileRoutesById: FileRoutesById
@@ -418,6 +558,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRouteRoute: typeof AdminRouteRouteWithChildren
+  EmployeRouteRoute: typeof EmployeRouteRouteWithChildren
   AProposRoute: typeof AProposRoute
   ContactRoute: typeof ContactRoute
   GalerieRoute: typeof GalerieRoute
@@ -425,6 +566,7 @@ export interface RootRouteChildren {
   BlogSlugRoute: typeof BlogSlugRoute
   DestinationsSlugRoute: typeof DestinationsSlugRoute
   OffresSlugRoute: typeof OffresSlugRoute
+  RSlugRoute: typeof RSlugRoute
   ReservationTripIdRoute: typeof ReservationTripIdRoute
   BlogIndexRoute: typeof BlogIndexRoute
   DestinationsIndexRoute: typeof DestinationsIndexRoute
@@ -461,6 +603,13 @@ declare module '@tanstack/react-router' {
       path: '/a-propos'
       fullPath: '/a-propos'
       preLoaderRoute: typeof AProposRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/employe': {
+      id: '/employe'
+      path: '/employe'
+      fullPath: '/employe'
+      preLoaderRoute: typeof EmployeRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -519,12 +668,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReservationTripIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/r/$slug': {
+      id: '/r/$slug'
+      path: '/r/$slug'
+      fullPath: '/r/$slug'
+      preLoaderRoute: typeof RSlugRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/offres/$slug': {
       id: '/offres/$slug'
       path: '/offres/$slug'
       fullPath: '/offres/$slug'
       preLoaderRoute: typeof OffresSlugRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/employe/trips': {
+      id: '/employe/trips'
+      path: '/trips'
+      fullPath: '/employe/trips'
+      preLoaderRoute: typeof EmployeTripsRouteImport
+      parentRoute: typeof EmployeRouteRoute
+    }
+    '/employe/reservations': {
+      id: '/employe/reservations'
+      path: '/reservations'
+      fullPath: '/employe/reservations'
+      preLoaderRoute: typeof EmployeReservationsRouteImport
+      parentRoute: typeof EmployeRouteRoute
+    }
+    '/employe/login': {
+      id: '/employe/login'
+      path: '/login'
+      fullPath: '/employe/login'
+      preLoaderRoute: typeof EmployeLoginRouteImport
+      parentRoute: typeof EmployeRouteRoute
+    }
+    '/employe/inscriptions': {
+      id: '/employe/inscriptions'
+      path: '/inscriptions'
+      fullPath: '/employe/inscriptions'
+      preLoaderRoute: typeof EmployeInscriptionsRouteImport
+      parentRoute: typeof EmployeRouteRoute
     }
     '/destinations/$slug': {
       id: '/destinations/$slug'
@@ -575,11 +759,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminLoginRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/admin/inscriptions': {
+      id: '/admin/inscriptions'
+      path: '/inscriptions'
+      fullPath: '/admin/inscriptions'
+      preLoaderRoute: typeof AdminInscriptionsRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/admin/galerie': {
       id: '/admin/galerie'
       path: '/galerie'
       fullPath: '/admin/galerie'
       preLoaderRoute: typeof AdminGalerieRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/equipe': {
+      id: '/admin/equipe'
+      path: '/equipe'
+      fullPath: '/admin/equipe'
+      preLoaderRoute: typeof AdminEquipeRouteImport
       parentRoute: typeof AdminRouteRoute
     }
     '/admin/destinations': {
@@ -610,6 +808,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminBlogRouteImport
       parentRoute: typeof AdminRouteRoute
     }
+    '/employe/trips/': {
+      id: '/employe/trips/'
+      path: '/'
+      fullPath: '/employe/trips/'
+      preLoaderRoute: typeof EmployeTripsIndexRouteImport
+      parentRoute: typeof EmployeTripsRoute
+    }
+    '/admin/trips/': {
+      id: '/admin/trips/'
+      path: '/'
+      fullPath: '/admin/trips/'
+      preLoaderRoute: typeof AdminTripsIndexRouteImport
+      parentRoute: typeof AdminTripsRoute
+    }
     '/admin/offres/': {
       id: '/admin/offres/'
       path: '/offres'
@@ -623,6 +835,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/reservation/confirmation/$ref'
       preLoaderRoute: typeof ReservationConfirmationRefRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/employe/trips/$tripId': {
+      id: '/employe/trips/$tripId'
+      path: '/$tripId'
+      fullPath: '/employe/trips/$tripId'
+      preLoaderRoute: typeof EmployeTripsTripIdRouteImport
+      parentRoute: typeof EmployeTripsRoute
+    }
+    '/admin/trips/$tripId': {
+      id: '/admin/trips/$tripId'
+      path: '/$tripId'
+      fullPath: '/admin/trips/$tripId'
+      preLoaderRoute: typeof AdminTripsTripIdRouteImport
+      parentRoute: typeof AdminTripsRoute
     }
     '/admin/offres/nouveau': {
       id: '/admin/offres/nouveau'
@@ -704,17 +930,33 @@ const AdminDestinationsRouteChildren: AdminDestinationsRouteChildren = {
 const AdminDestinationsRouteWithChildren =
   AdminDestinationsRoute._addFileChildren(AdminDestinationsRouteChildren)
 
+interface AdminTripsRouteChildren {
+  AdminTripsTripIdRoute: typeof AdminTripsTripIdRoute
+  AdminTripsIndexRoute: typeof AdminTripsIndexRoute
+}
+
+const AdminTripsRouteChildren: AdminTripsRouteChildren = {
+  AdminTripsTripIdRoute: AdminTripsTripIdRoute,
+  AdminTripsIndexRoute: AdminTripsIndexRoute,
+}
+
+const AdminTripsRouteWithChildren = AdminTripsRoute._addFileChildren(
+  AdminTripsRouteChildren,
+)
+
 interface AdminRouteRouteChildren {
   AdminBlogRoute: typeof AdminBlogRoute
   AdminClientsRoute: typeof AdminClientsRoute
   AdminDashboardRoute: typeof AdminDashboardRoute
   AdminDestinationsRoute: typeof AdminDestinationsRouteWithChildren
+  AdminEquipeRoute: typeof AdminEquipeRoute
   AdminGalerieRoute: typeof AdminGalerieRoute
+  AdminInscriptionsRoute: typeof AdminInscriptionsRoute
   AdminLoginRoute: typeof AdminLoginRoute
   AdminMessagesRoute: typeof AdminMessagesRoute
   AdminReservationsRoute: typeof AdminReservationsRoute
   AdminSessionsRoute: typeof AdminSessionsRoute
-  AdminTripsRoute: typeof AdminTripsRoute
+  AdminTripsRoute: typeof AdminTripsRouteWithChildren
   AdminIndexRoute: typeof AdminIndexRoute
   AdminOffresIdRoute: typeof AdminOffresIdRoute
   AdminOffresNouveauRoute: typeof AdminOffresNouveauRoute
@@ -726,12 +968,14 @@ const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminClientsRoute: AdminClientsRoute,
   AdminDashboardRoute: AdminDashboardRoute,
   AdminDestinationsRoute: AdminDestinationsRouteWithChildren,
+  AdminEquipeRoute: AdminEquipeRoute,
   AdminGalerieRoute: AdminGalerieRoute,
+  AdminInscriptionsRoute: AdminInscriptionsRoute,
   AdminLoginRoute: AdminLoginRoute,
   AdminMessagesRoute: AdminMessagesRoute,
   AdminReservationsRoute: AdminReservationsRoute,
   AdminSessionsRoute: AdminSessionsRoute,
-  AdminTripsRoute: AdminTripsRoute,
+  AdminTripsRoute: AdminTripsRouteWithChildren,
   AdminIndexRoute: AdminIndexRoute,
   AdminOffresIdRoute: AdminOffresIdRoute,
   AdminOffresNouveauRoute: AdminOffresNouveauRoute,
@@ -742,9 +986,42 @@ const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
   AdminRouteRouteChildren,
 )
 
+interface EmployeTripsRouteChildren {
+  EmployeTripsTripIdRoute: typeof EmployeTripsTripIdRoute
+  EmployeTripsIndexRoute: typeof EmployeTripsIndexRoute
+}
+
+const EmployeTripsRouteChildren: EmployeTripsRouteChildren = {
+  EmployeTripsTripIdRoute: EmployeTripsTripIdRoute,
+  EmployeTripsIndexRoute: EmployeTripsIndexRoute,
+}
+
+const EmployeTripsRouteWithChildren = EmployeTripsRoute._addFileChildren(
+  EmployeTripsRouteChildren,
+)
+
+interface EmployeRouteRouteChildren {
+  EmployeInscriptionsRoute: typeof EmployeInscriptionsRoute
+  EmployeLoginRoute: typeof EmployeLoginRoute
+  EmployeReservationsRoute: typeof EmployeReservationsRoute
+  EmployeTripsRoute: typeof EmployeTripsRouteWithChildren
+}
+
+const EmployeRouteRouteChildren: EmployeRouteRouteChildren = {
+  EmployeInscriptionsRoute: EmployeInscriptionsRoute,
+  EmployeLoginRoute: EmployeLoginRoute,
+  EmployeReservationsRoute: EmployeReservationsRoute,
+  EmployeTripsRoute: EmployeTripsRouteWithChildren,
+}
+
+const EmployeRouteRouteWithChildren = EmployeRouteRoute._addFileChildren(
+  EmployeRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRouteRoute: AdminRouteRouteWithChildren,
+  EmployeRouteRoute: EmployeRouteRouteWithChildren,
   AProposRoute: AProposRoute,
   ContactRoute: ContactRoute,
   GalerieRoute: GalerieRoute,
@@ -752,6 +1029,7 @@ const rootRouteChildren: RootRouteChildren = {
   BlogSlugRoute: BlogSlugRoute,
   DestinationsSlugRoute: DestinationsSlugRoute,
   OffresSlugRoute: OffresSlugRoute,
+  RSlugRoute: RSlugRoute,
   ReservationTripIdRoute: ReservationTripIdRoute,
   BlogIndexRoute: BlogIndexRoute,
   DestinationsIndexRoute: DestinationsIndexRoute,

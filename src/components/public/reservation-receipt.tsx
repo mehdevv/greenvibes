@@ -50,7 +50,7 @@ export function ReservationReceipt({ data }: ReservationReceiptProps) {
             <dd className="font-medium">{data.phone}</dd>
           </div>
           <div className="flex justify-between gap-4">
-            <dt className="text-muted-foreground">Localisation</dt>
+            <dt className="text-muted-foreground">Adresse</dt>
             <dd className="text-right font-medium">{data.location}</dd>
           </div>
           <div className="flex justify-between gap-4">
@@ -85,8 +85,8 @@ export function ReservationReceipt({ data }: ReservationReceiptProps) {
         </HeroButton>
       </div>
 
-      <p className="mt-4 text-center text-xs text-muted-foreground">
-        Questions ? {AGENCY_CONTACT.phoneDisplay} · WhatsApp disponible
+      <p className="mt-4 text-center text-sm text-muted-foreground">
+        Questions ? {AGENCY_CONTACT.phoneDisplay} · {AGENCY_CONTACT.email}
       </p>
     </HeroCard>
   );

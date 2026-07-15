@@ -1,14 +1,34 @@
-import { createClient, FunctionsFetchError, FunctionsHttpError } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient, FunctionsFetchError, FunctionsHttpError } from "@supabase/supabase-js";
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL ?? "";
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY ?? "";
 
 export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
 
-export const supabase = createClient(
-  supabaseUrl || "https://placeholder.supabase.co",
-  supabaseAnonKey || "placeholder",
-);
+const clientOptions = {
+  url: supabaseUrl || "https://placeholder.supabase.co",
+  key: supabaseAnonKey || "placeholder",
+};
+
+/** Owner / manager admin session — separate storage from employee portal */
+export const supabaseAdmin = createClient(clientOptions.url, clientOptions.key, {
+  auth: { storageKey: "gv-admin-auth", persistSession: true },
+});
+
+/** Employee session — can coexist with admin session in another tab */
+export const supabaseEmployee = createClient(clientOptions.url, clientOptions.key, {
+  auth: { storageKey: "gv-employee-auth", persistSession: true },
+});
+
+/** @deprecated Prefer supabaseAdmin or getActiveSupabase() */
+export const supabase = supabaseAdmin;
+
+export function getActiveSupabase(): SupabaseClient {
+  if (typeof window !== "undefined" && window.location.pathname.startsWith("/employe")) {
+    return supabaseEmployee;
+  }
+  return supabaseAdmin;
+}
 
 async function getFunctionErrorMessage(
   name: string,
@@ -45,8 +65,9 @@ async function getFunctionErrorMessage(
 export async function invokeFunction<T>(
   name: string,
   body?: Record<string, unknown>,
+  client: SupabaseClient = getActiveSupabase(),
 ): Promise<T> {
-  const { data, error } = await supabase.functions.invoke(name, { body });
+  const { data, error } = await client.functions.invoke(name, { body });
   if (error) throw new Error(await getFunctionErrorMessage(name, error, data));
   if (data?.error) throw new Error(data.error);
   return data as T;

@@ -1,13 +1,13 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { CreateReservationInput, CreateReservationResult, Reservation, ReservationStatus, Trip } from "./types";
-import { invokeFunction, supabase } from "@/lib/supabase";
+import { invokeFunction, getActiveSupabase } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
 
 async function createReservationRpc(
   input: CreateReservationInput,
 ): Promise<CreateReservationResult> {
-  const { data, error } = await supabase.rpc("create_reservation", {
+  const { data, error } = await getActiveSupabase().rpc("create_reservation", {
     p_trip_id: input.tripId,
     p_first_name: input.firstName,
     p_last_name: input.lastName,
@@ -69,6 +69,7 @@ function mapTripSummary(row: Record<string, unknown> | null | undefined): Trip |
     capacity: Number(row.capacity ?? 0),
     spotsTaken: Number(row.spots_taken ?? 0),
     active: Boolean(row.active ?? true),
+    slug: row.slug ? String(row.slug) : null,
     archived: Boolean(row.archived ?? false),
     departureDate: row.departure_date ? String(row.departure_date) : null,
     media: [],
@@ -122,7 +123,7 @@ export function useListReservations(params?: { search?: string; status?: string;
     queryKey: ["reservations", params],
     enabled: params?.tripId !== "",
     queryFn: async (): Promise<Reservation[]> => {
-      let query = supabase
+      let query = getActiveSupabase()
         .from("reservations")
         .select(RESERVATION_SELECT)
         .order("created_at", { ascending: false });
@@ -157,7 +158,7 @@ async function syncSpotsForStatusChange(
 
   if (wasConfirmed === willConfirm) return;
 
-  const { data: trip, error } = await supabase
+  const { data: trip, error } = await getActiveSupabase()
     .from("trips")
     .select("capacity, spots_taken")
     .eq("id", tripId)
@@ -171,7 +172,7 @@ async function syncSpotsForStatusChange(
     if (taken >= capacity) {
       throw new Error("Complet — aucune place disponible pour confirmer cette réservation.");
     }
-    const { error: updateError } = await supabase
+    const { error: updateError } = await getActiveSupabase()
       .from("trips")
       .update({ spots_taken: taken + 1 })
       .eq("id", tripId);
@@ -179,7 +180,7 @@ async function syncSpotsForStatusChange(
     return;
   }
 
-  const { error: updateError } = await supabase
+  const { error: updateError } = await getActiveSupabase()
     .from("trips")
     .update({ spots_taken: Math.max(0, taken - 1) })
     .eq("id", tripId);
@@ -187,7 +188,7 @@ async function syncSpotsForStatusChange(
 }
 
 async function updateReservationStatusById(id: string, status: ReservationStatus): Promise<Reservation> {
-  const { data: existing, error: fetchError } = await supabase
+  const { data: existing, error: fetchError } = await getActiveSupabase()
     .from("reservations")
     .select("id, status, trip_id")
     .eq("id", id)
@@ -199,7 +200,7 @@ async function updateReservationStatusById(id: string, status: ReservationStatus
     await syncSpotsForStatusChange(existing.trip_id, oldStatus, status);
   }
 
-  const { data, error } = await supabase
+  const { data, error } = await getActiveSupabase()
     .from("reservations")
     .update({ status })
     .eq("id", id)
@@ -236,7 +237,7 @@ export function useDeleteReservation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (id: string) => {
-      const { data: existing, error: fetchError } = await supabase
+      const { data: existing, error: fetchError } = await getActiveSupabase()
         .from("reservations")
         .select("id, status, trip_id")
         .eq("id", id)
@@ -248,7 +249,7 @@ export function useDeleteReservation() {
         await syncSpotsForStatusChange(existing.trip_id, oldStatus, "cancelled");
       }
 
-      const { error } = await supabase.from("reservations").delete().eq("id", id);
+      const { error } = await getActiveSupabase().from("reservations").delete().eq("id", id);
       if (error) throw new Error(formatPostgrestError(error));
     },
     onSuccess: () => invalidateReservationQueries(qc),
@@ -259,7 +260,7 @@ export function useReservationsRealtime() {
   const qc = useQueryClient();
 
   useEffect(() => {
-    const channel = supabase
+    const channel = getActiveSupabase()
       .channel("reservations-realtime")
       .on(
         "postgres_changes",
@@ -273,14 +274,14 @@ export function useReservationsRealtime() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      getActiveSupabase().removeChannel(channel);
     };
   }, [qc]);
 }
 
 export async function exportReservationsCsv(rows: Reservation[]): Promise<Blob> {
   const header =
-    "Référence,Prénom,Nom,Téléphone,Localisation,Voyage,Prix voyage,Statut,Date\n";
+    "Référence,Prénom,Nom,Téléphone,Adresse,Voyage,Prix voyage,Statut,Date\n";
   const body = rows
     .map((r) =>
       [
