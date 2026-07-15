@@ -22,8 +22,10 @@ export function useCreateEmployeeMagicLink() {
 
 export type RedeemEmployeeMagicLinkResult = {
   ok: true;
-  token_hash: string;
+  action_link?: string;
+  token_hash?: string;
   email: string;
+  verification_type?: string;
 };
 
 export async function redeemEmployeeMagicLink(token: string): Promise<RedeemEmployeeMagicLinkResult> {

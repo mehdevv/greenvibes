@@ -133,58 +133,67 @@ Deno.serve(async (req) => {
       }
 
       const tokenHash = await hashToken(rawToken);
-      const { data: row, error: lookupError } = await service
+      const { data: pending, error: lookupError } = await service
         .from("employee_login_tokens")
         .select("id, worker_id, expires_at, used_at")
         .eq("token_hash", tokenHash)
         .maybeSingle();
 
-      if (lookupError || !row) {
+      if (lookupError || !pending) {
         return jsonResponse({ error: "Lien invalide ou expiré" }, 400);
       }
-      if (row.used_at) {
+      if (pending.used_at) {
         return jsonResponse({ error: "Ce lien a déjà été utilisé" }, 400);
       }
-      if (new Date(row.expires_at).getTime() < Date.now()) {
+      if (new Date(pending.expires_at).getTime() < Date.now()) {
         return jsonResponse({ error: "Ce lien a expiré" }, 400);
       }
 
       const { data: worker, error: workerError } = await service
         .from("admin_profiles")
         .select("id, email, role")
-        .eq("id", row.worker_id)
+        .eq("id", pending.worker_id)
         .maybeSingle();
 
       if (workerError || !worker || worker.role !== "worker") {
         return jsonResponse({ error: "Compte employé invalide" }, 400);
       }
 
+      const redirectTo = `${getSiteOrigin(req)}/employe/inscriptions`;
       const { data: linkData, error: linkError } = await service.auth.admin.generateLink({
         type: "magiclink",
         email: worker.email,
-        options: {
-          redirectTo: `${getSiteOrigin(req)}/employe/inscriptions`,
-        },
+        options: { redirectTo },
       });
 
-      if (linkError || !linkData?.properties?.hashed_token) {
+      if (linkError || !linkData?.properties) {
         return jsonResponse({ error: linkError?.message ?? "Connexion impossible" }, 500);
       }
 
-      const { error: markError } = await service
+      const actionLink = linkData.properties.action_link;
+      const tokenHashOtp = linkData.properties.hashed_token;
+      if (!actionLink && !tokenHashOtp) {
+        return jsonResponse({ error: "Connexion impossible" }, 500);
+      }
+
+      const { data: claimed, error: claimError } = await service
         .from("employee_login_tokens")
         .update({ used_at: new Date().toISOString() })
-        .eq("id", row.id)
-        .is("used_at", null);
+        .eq("id", pending.id)
+        .is("used_at", null)
+        .select("id")
+        .maybeSingle();
 
-      if (markError) {
-        return jsonResponse({ error: "Lien déjà utilisé" }, 400);
+      if (claimError || !claimed) {
+        return jsonResponse({ error: "Ce lien a déjà été utilisé" }, 400);
       }
 
       return jsonResponse({
         ok: true,
-        token_hash: linkData.properties.hashed_token,
+        action_link: actionLink,
+        token_hash: tokenHashOtp,
         email: worker.email,
+        verification_type: linkData.properties.verification_type ?? "magiclink",
       });
     }
 

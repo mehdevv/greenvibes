@@ -2,9 +2,13 @@ import { getSiteOrigin } from "@/lib/trip-slug";
 
 export type LoginPortal = "admin" | "employee";
 
+export function getPortalLoginPath(portal: LoginPortal): "/admin/login" | "/employe/login" {
+  return portal === "admin" ? "/admin/login" : "/employe/login";
+}
+
 export function getPortalLoginUrl(portal: LoginPortal): string {
   const origin = getSiteOrigin();
-  return portal === "admin" ? `${origin}/admin/login` : `${origin}/employe/login`;
+  return `${origin}${getPortalLoginPath(portal)}`;
 }
 
 export const PORTAL_LOGIN_META: Record<

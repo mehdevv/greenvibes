@@ -1,7 +1,8 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useAdminAuth } from "@/lib/auth";
 import { canAccessOwnerAdmin, isWorkerAccount } from "@/lib/admin-permissions";
+import { PortalSwitchLinks } from "@/components/admin/portal-switch-links";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -23,11 +24,18 @@ function AdminLoginPage() {
 }
 
 function AdminLoginForm() {
-  const { signIn, signOut } = useAdminAuth();
+  const { user, isLoading, signIn, signOut } = useAdminAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (user && canAccessOwnerAdmin(user)) {
+      navigate({ to: "/admin/dashboard", replace: true });
+    }
+  }, [user, isLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,8 +66,8 @@ function AdminLoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary px-4">
-      <Card className="w-full max-w-md">
+    <div className="flex min-h-screen items-center justify-center overflow-y-auto bg-secondary px-4 py-8">
+      <Card className="my-auto w-full max-w-md">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
             <Logo size="lg" className="justify-center" />
@@ -97,17 +105,7 @@ function AdminLoginForm() {
               {loading ? "Connexion..." : "Se connecter"}
             </Button>
           </form>
-          <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
-            <p>
-              Employé ?{" "}
-              <Link to="/employe/login" className="text-forest hover:underline">
-                Espace employé
-              </Link>
-            </p>
-            <Link to="/" className="block hover:text-foreground">
-              Retour au site
-            </Link>
-          </div>
+          <PortalSwitchLinks current="admin" />
         </CardContent>
       </Card>
     </div>

@@ -13,7 +13,7 @@ import { useAuth } from "@/lib/auth";
 import { DEFAULT_WORKER_PERMISSIONS } from "@/lib/admin-permissions";
 import { getPortalLoginUrl } from "@/lib/portal-login-urls";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   Dialog,
@@ -25,8 +25,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Pencil, Plus, QrCode, Trash2, Users } from "lucide-react";
+import { Copy, ExternalLink, Pencil, Plus, QrCode, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/equipe")({
   component: AdminTeamPage,
@@ -113,6 +114,13 @@ function AdminTeamPage() {
               <Copy className="h-4 w-4" />
               Copier
             </Button>
+            <a
+              href={employeeLoginUrl}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
+            >
+              <ExternalLink className="h-4 w-4" />
+              Ouvrir
+            </a>
           </div>
         </CardContent>
       </Card>

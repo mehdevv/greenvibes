@@ -1,5 +1,5 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useEmployeeAuth } from "@/lib/auth";
 import { canAccessEmployeePortal } from "@/lib/admin-permissions";
+import { PortalSwitchLinks } from "@/components/admin/portal-switch-links";
 import { PortalProvider } from "@/lib/portal";
 import { toast } from "sonner";
 
@@ -23,11 +24,18 @@ function EmployeeLoginPage() {
 }
 
 function EmployeeLoginForm() {
-  const { signIn, signOut } = useEmployeeAuth();
+  const { user, isLoading, signIn, signOut } = useEmployeeAuth();
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) return;
+    if (user && canAccessEmployeePortal(user)) {
+      navigate({ to: "/employe/inscriptions", replace: true });
+    }
+  }, [user, isLoading, navigate]);
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -56,8 +64,8 @@ function EmployeeLoginForm() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-secondary px-4">
-      <Card className="w-full max-w-md border-forest/20">
+    <div className="flex min-h-screen items-center justify-center overflow-y-auto bg-secondary px-4 py-8">
+      <Card className="my-auto w-full max-w-md border-forest/20">
         <CardHeader className="text-center">
           <div className="mx-auto mb-3">
             <Logo size="lg" className="justify-center" />
@@ -95,17 +103,7 @@ function EmployeeLoginForm() {
               {loading ? "Connexion..." : "Se connecter"}
             </Button>
           </form>
-          <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
-            <p>
-              Propriétaire ?{" "}
-              <Link to="/admin/login" className="text-forest hover:underline">
-                Espace admin
-              </Link>
-            </p>
-            <Link to="/" className="block hover:text-foreground">
-              Retour au site
-            </Link>
-          </div>
+          <PortalSwitchLinks current="employee" />
         </CardContent>
       </Card>
     </div>

@@ -40,12 +40,19 @@ export function ContactSection() {
 
               <a
                 href={`mailto:${AGENCY_CONTACT.email}`}
-                className="flex items-center gap-3 text-sm text-muted-foreground transition hover:text-forest"
+                className="group flex items-center gap-3 transition hover:text-leaf"
               >
-                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-border/40">
+                <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-white shadow-sm ring-1 ring-border/40 transition group-hover:bg-mint">
                   <Mail className="h-5 w-5 text-forest" />
                 </span>
-                <span className="pt-2.5 font-medium text-foreground">{AGENCY_CONTACT.email}</span>
+                <span className="min-w-0">
+                  <span className="block text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                    Email
+                  </span>
+                  <span className="mt-0.5 block text-base font-semibold text-forest [overflow-wrap:anywhere] sm:text-lg">
+                    {AGENCY_CONTACT.email}
+                  </span>
+                </span>
               </a>
 
               <a

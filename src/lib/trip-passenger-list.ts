@@ -1,7 +1,5 @@
 import type { Reservation, Trip } from "@/api/types";
-import { reservationStatusLabel } from "@/api/reservations";
 import {
-  agencyContactHtml,
   printDocumentStyles,
   printHeaderHtml,
   printWatermarkHtml,
@@ -17,19 +15,10 @@ function escapeHtml(value: string) {
 
 export function downloadTripPassengerList(trip: Trip, reservations: Reservation[]) {
   const active = reservations.filter((r) => r.status !== "cancelled");
-  const header =
-    "Référence,Prénom,Nom,Téléphone,Adresse,Statut,Date inscription\n";
+  const header = "Nom,Téléphone,Localisation\n";
   const body = active
     .map((r) =>
-      [
-        r.bookingRef,
-        r.firstName,
-        r.lastName,
-        r.phone,
-        r.location,
-        reservationStatusLabel(r.status),
-        r.createdAt,
-      ]
+      [`${r.firstName} ${r.lastName}`, r.phone, r.location]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(","),
     )
@@ -48,14 +37,11 @@ export function printTripPassengerList(trip: Trip, reservations: Reservation[]) 
   const active = reservations.filter((r) => r.status !== "cancelled");
   const rows = active
     .map(
-      (r, i) => `
+      (r) => `
       <tr>
-        <td>${i + 1}</td>
-        <td>${escapeHtml(r.bookingRef)}</td>
         <td>${escapeHtml(`${r.firstName} ${r.lastName}`)}</td>
         <td>${escapeHtml(r.phone)}</td>
         <td>${escapeHtml(r.location)}</td>
-        <td>${escapeHtml(reservationStatusLabel(r.status))}</td>
       </tr>`,
     )
     .join("");
@@ -69,24 +55,22 @@ export function printTripPassengerList(trip: Trip, reservations: Reservation[]) 
 </head>
 <body>
   ${printWatermarkHtml()}
-  ${printHeaderHtml(
-    escapeHtml(trip.title),
-    `${active.length} participant(s)${trip.meetingPoint ? ` · ${escapeHtml(trip.meetingPoint)}` : ""}`,
-  )}
-  <table>
-    <thead>
-      <tr>
-        <th>#</th>
-        <th>Réf.</th>
-        <th>Nom</th>
-        <th>Téléphone</th>
-        <th>Adresse</th>
-        <th>Statut</th>
-      </tr>
-    </thead>
-    <tbody>${rows || '<tr><td colspan="6">Aucun participant</td></tr>'}</tbody>
-  </table>
-  ${agencyContactHtml()}
+  <div class="print-content">
+    ${printHeaderHtml(
+      escapeHtml(trip.title),
+      `${active.length} participant${active.length > 1 ? "s" : ""}`,
+    )}
+    <table>
+      <thead>
+        <tr>
+          <th>Nom</th>
+          <th>Téléphone</th>
+          <th>Localisation</th>
+        </tr>
+      </thead>
+      <tbody>${rows || '<tr><td colspan="3">Aucun participant</td></tr>'}</tbody>
+    </table>
+  </div>
   <script>window.onload = () => { window.print(); }</script>
 </body>
 </html>`;

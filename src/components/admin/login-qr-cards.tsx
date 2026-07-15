@@ -1,7 +1,7 @@
 import QRCode from "react-qr-code";
 import { Copy, ExternalLink, QrCode } from "lucide-react";
 import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   getPortalLoginUrl,
@@ -66,12 +66,13 @@ function LoginQrCard({ portal }: { portal: LoginPortal }) {
               <Copy className="h-3.5 w-3.5" />
               Copier
             </Button>
-            <Button asChild variant="outline" size="sm" className="gap-1.5">
-              <a href={url} target="_blank" rel="noopener noreferrer">
-                <ExternalLink className="h-3.5 w-3.5" />
-                Ouvrir
-              </a>
-            </Button>
+            <a
+              href={url}
+              className={cn(buttonVariants({ variant: "outline", size: "sm" }), "gap-1.5")}
+            >
+              <ExternalLink className="h-3.5 w-3.5" />
+              Ouvrir
+            </a>
           </div>
         </div>
       </CardContent>

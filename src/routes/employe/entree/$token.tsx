@@ -1,7 +1,8 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { redeemEmployeeMagicLink } from "@/api/employee-magic-login";
 import { Logo } from "@/components/brand/logo";
+import { PortalSwitchLinks } from "@/components/admin/portal-switch-links";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { useEmployeeAuth } from "@/lib/auth";
@@ -26,26 +27,44 @@ function EmployeeMagicEntryForm() {
   const { refresh } = useEmployeeAuth();
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const startedRef = useRef(false);
 
   useEffect(() => {
+    if (startedRef.current) return;
+    startedRef.current = true;
+
     let cancelled = false;
 
     (async () => {
       try {
         const result = await redeemEmployeeMagicLink(token);
 
+        if (result.action_link) {
+          window.location.replace(result.action_link);
+          return;
+        }
+
+        if (!result.token_hash) {
+          throw new Error("Connexion impossible");
+        }
+
+        const otpType =
+          result.verification_type === "magiclink" ? "magiclink" : "email";
+
         let verifyError = (
           await supabaseEmployee.auth.verifyOtp({
-            type: "magiclink",
+            type: otpType,
             token_hash: result.token_hash,
+            email: result.email,
           })
         ).error;
 
-        if (verifyError) {
+        if (verifyError && otpType === "magiclink") {
           verifyError = (
             await supabaseEmployee.auth.verifyOtp({
               type: "email",
               token_hash: result.token_hash,
+              email: result.email,
             })
           ).error;
         }
@@ -100,6 +119,7 @@ function EmployeeMagicEntryForm() {
           <Button asChild variant="outline" className="w-full">
             <Link to="/employe/login">Connexion classique</Link>
           </Button>
+          <PortalSwitchLinks current="employee" />
         </CardContent>
       </Card>
     </div>

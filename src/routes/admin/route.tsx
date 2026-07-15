@@ -136,7 +136,7 @@ function AdminLayout() {
           </p>
           {user.role === "worker" && (
             <Button asChild className="mt-4 rounded-full">
-              <Link to="/employe/login">Espace employé</Link>
+              <Link to="/employe/login" reloadDocument>Espace employé</Link>
             </Button>
           )}
           <Button

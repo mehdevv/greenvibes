@@ -1,6 +1,5 @@
 import { jsPDF } from "jspdf";
-import { AGENCY_CONTACT, formatPrice } from "@/lib/constants";
-import { agencyContactLines, drawPdfLogoWatermark, getLogoDataUrl } from "@/lib/print-branding";
+import { drawPdfPrintingWatermark } from "@/lib/print-branding";
 
 export type ReservationReceiptData = {
   bookingRef: string;
@@ -16,37 +15,9 @@ export type ReservationReceiptData = {
   createdAt?: string;
 };
 
-const FOREST = [45, 106, 79] as const;
-const MUTED = [92, 107, 96] as const;
-const INK = [10, 18, 12] as const;
-const BORDER = [216, 227, 220] as const;
-const SAND = [248, 240, 227] as const;
-
-function formatReceiptDate(iso?: string) {
-  const date = iso ? new Date(iso) : new Date();
-  return date.toLocaleString("fr-DZ", {
-    dateStyle: "long",
-    timeStyle: "short",
-  });
-}
-
-function statusLabel(status: ReservationReceiptData["status"]) {
-  if (status === "waitlisted") return "Liste d'attente";
-  if (status === "cancelled") return "Annulée";
-  return "Confirmée";
-}
-
-function receiptTitle(status: ReservationReceiptData["status"]) {
-  if (status === "waitlisted") return "Liste d'attente enregistrée";
-  return "Réservation enregistrée";
-}
-
-function followUpMessage(status: ReservationReceiptData["status"]) {
-  if (status === "waitlisted") {
-    return "L'équipe GreenVibes te contactera sous 24 à 48 h si une place se libère.";
-  }
-  return "L'équipe GreenVibes t'appellera sous 24 à 48 h pour confirmer les détails.";
-}
+const INK = [17, 17, 17] as const;
+const MUTED = [68, 68, 68] as const;
+const BORDER = [34, 34, 34] as const;
 
 function drawLabelValueRow(
   doc: jsPDF,
@@ -55,130 +26,59 @@ function drawLabelValueRow(
   y: number,
   margin: number,
   pageWidth: number,
+  valueSize = 11,
 ): number {
-  const valueX = margin + 44;
+  const valueX = margin + 42;
   const valueWidth = pageWidth - margin - valueX;
   const valueLines = doc.splitTextToSize(value, valueWidth);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(...MUTED);
-  doc.text(label, margin, y);
+  doc.text(label.toUpperCase(), margin, y);
 
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(valueSize);
   doc.setTextColor(...INK);
   doc.text(valueLines, valueX, y);
 
-  const rowHeight = Math.max(7, valueLines.length * 4.5);
-  const lineY = y + rowHeight - 2;
+  const rowHeight = Math.max(8, valueLines.length * 5);
+  const lineY = y + rowHeight;
   doc.setDrawColor(...BORDER);
+  doc.setLineWidth(0.3);
   doc.line(margin, lineY, pageWidth - margin, lineY);
 
-  return lineY + 5;
-}
-
-function drawContactFooter(doc: jsPDF, y: number, margin: number, pageWidth: number) {
-  const boxTop = y;
-  const boxHeight = 34;
-  doc.setFillColor(...SAND);
-  doc.setDrawColor(...BORDER);
-  doc.roundedRect(margin, boxTop, pageWidth - margin * 2, boxHeight, 3, 3, "FD");
-
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...FOREST);
-  doc.text("Contact GreenVibes", margin + 4, boxTop + 7);
-
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8);
-  doc.setTextColor(...MUTED);
-  const lines = agencyContactLines().slice(1);
-  let lineY = boxTop + 13;
-  for (const line of lines) {
-    doc.text(line, margin + 4, lineY);
-    lineY += 4.2;
-  }
-
-  return boxTop + boxHeight + 6;
+  return lineY + 8;
 }
 
 export async function buildReservationReceiptPdf(data: ReservationReceiptData): Promise<jsPDF> {
   const doc = new jsPDF({ orientation: "portrait", unit: "mm", format: "a5" });
   const pageWidth = doc.internal.pageSize.getWidth();
-  const pageHeight = doc.internal.pageSize.getHeight();
-  const margin = 14;
-  let y = 16;
+  const margin = 16;
+  let y = 22;
 
-  const logo = await getLogoDataUrl();
+  await drawPdfPrintingWatermark(doc, 0.09);
 
-  doc.setFillColor(...FOREST);
-  doc.rect(0, 0, pageWidth, 32, "F");
-
-  doc.addImage(logo, "JPEG", margin, 6, 20, 20, undefined, "FAST");
-
-  doc.setTextColor(255, 255, 255);
+  doc.setTextColor(...INK);
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(18);
-  doc.text("GreenVibes", margin + 24, 14);
+  doc.setFontSize(11);
+  doc.text("GREENVIBES", margin, y);
 
   doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.text("Reçu de réservation", margin + 24, 21);
-  doc.text(formatReceiptDate(data.createdAt), pageWidth - margin, 21, { align: "right" });
+  doc.setFontSize(8);
+  doc.setTextColor(...MUTED);
+  doc.text(`Réf. ${data.bookingRef}`, pageWidth - margin, y, { align: "right" });
 
-  y = 40;
+  y += 14;
   doc.setDrawColor(...BORDER);
-  doc.setLineWidth(0.4);
-  doc.roundedRect(margin, y, pageWidth - margin * 2, pageHeight - y - margin, 3, 3, "S");
+  doc.setLineWidth(0.6);
+  doc.line(margin, y, pageWidth - margin, y);
+  y += 16;
 
-  y += 8;
-  doc.setTextColor(...FOREST);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(13);
-  doc.text(receiptTitle(data.status), margin + 4, y);
-
-  y += 9;
-  doc.setFontSize(17);
-  doc.text(data.bookingRef, margin + 4, y);
-
-  y += 8;
-  doc.setFontSize(10);
-  doc.setFont("helvetica", "normal");
-  doc.setTextColor(...MUTED);
-  doc.text(`Statut : ${statusLabel(data.status)}`, margin + 4, y);
-
-  y += 10;
-  const rows: [string, string][] = [
-    ["Sortie", data.tripTitle],
-    ["Durée", data.tripDuration],
-    ["Prix", `${formatPrice(data.tripPrice)} DA`],
-    ["Voyageur", `${data.firstName} ${data.lastName}`],
-    ["Téléphone", data.phone],
-    ["Adresse", data.location],
-  ];
-  if (data.tripMeetingPoint) {
-    rows.push(["Rendez-vous", data.tripMeetingPoint]);
-  }
-
-  for (const [label, value] of rows) {
-    y = drawLabelValueRow(doc, label, value, y, margin + 4, pageWidth - 4);
-  }
-
-  y += 4;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(8.5);
-  doc.setTextColor(...MUTED);
-  const note = followUpMessage(data.status);
-  const wrappedNote = doc.splitTextToSize(note, pageWidth - (margin + 4) * 2);
-  doc.text(wrappedNote, margin + 4, y);
-  y += wrappedNote.length * 4 + 6;
-
-  y = drawContactFooter(doc, y, margin + 2, pageWidth - 4);
-
-  doc.setFontSize(7.5);
-  doc.text("Conserve ce reçu — il contient ta référence de réservation.", margin + 4, y);
-
-  await drawPdfLogoWatermark(doc, 0.11);
+  const fullName = `${data.firstName} ${data.lastName}`.trim();
+  y = drawLabelValueRow(doc, "Nom", fullName, y, margin, pageWidth, 14);
+  y = drawLabelValueRow(doc, "Téléphone", data.phone, y, margin, pageWidth, 12);
+  y = drawLabelValueRow(doc, "Localisation", data.location, y, margin, pageWidth, 12);
 
   return doc;
 }
