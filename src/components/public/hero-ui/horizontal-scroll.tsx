@@ -13,9 +13,9 @@ import { cn } from "@/lib/utils";
 const EDGE_PADDING = "max(1.25rem, calc((100vw - 80rem) / 2 + 1.25rem))";
 const RESUME_DELAY = 4500;
 const DRAG_THRESHOLD = 3;
-const MOMENTUM_FRICTION = 0.92;
-const MOMENTUM_MAX_VELOCITY = 4.5;
-const MOMENTUM_MIN_VELOCITY = 0.015;
+const MOMENTUM_FRICTION = 0.95;
+const MOMENTUM_MAX_VELOCITY = 6;
+const MOMENTUM_MIN_VELOCITY = 0.01;
 
 type HorizontalScrollProps = {
   children: ReactNode;
@@ -29,7 +29,7 @@ type HorizontalScrollProps = {
 export function HorizontalScroll({
   children,
   className,
-  autoScrollInterval = 3000,
+  autoScrollInterval = 0,
   showDots = true,
   itemCount = 0,
   "aria-label": ariaLabel = "Défilement horizontal",
@@ -43,6 +43,7 @@ export function HorizontalScroll({
   const [dragging, setDragging] = useState(false);
   const [settling, setSettling] = useState(false);
   const draggingRef = useRef(false);
+  const settlingRef = useRef(false);
   const momentumRef = useRef<number | null>(null);
   const activePointerId = useRef<number | null>(null);
 
@@ -83,6 +84,7 @@ export function HorizontalScroll({
   }, [stepWidth]);
 
   const measure = useCallback(() => {
+    if (draggingRef.current || settlingRef.current) return;
     const el = trackRef.current;
     if (!el) return;
     const { scrollLeft, scrollWidth, clientWidth } = el;
@@ -119,6 +121,8 @@ export function HorizontalScroll({
       cancelAnimationFrame(momentumRef.current);
       momentumRef.current = null;
     }
+    settlingRef.current = false;
+    setSettling(false);
   }, []);
 
   const startMomentum = useCallback(
@@ -140,15 +144,22 @@ export function HorizontalScroll({
       }
 
       const maxScroll = el.scrollWidth - el.clientWidth;
+      settlingRef.current = true;
       setSettling(true);
 
-      const frame = () => {
-        el.scrollLeft -= velocity * 16;
-        velocity *= MOMENTUM_FRICTION;
+      let lastFrame = performance.now();
+
+      const frame = (now: number) => {
+        const dt = Math.min(now - lastFrame, 32);
+        lastFrame = now;
+
+        el.scrollLeft -= velocity * dt;
+        velocity *= MOMENTUM_FRICTION ** (dt / 16);
 
         const atEdge = el.scrollLeft <= 0 || el.scrollLeft >= maxScroll - 0.5;
         if (Math.abs(velocity) < MOMENTUM_MIN_VELOCITY || atEdge) {
           momentumRef.current = null;
+          settlingRef.current = false;
           setSettling(false);
           measure();
           return;
@@ -249,6 +260,8 @@ export function HorizontalScroll({
     let lastTime = 0;
     let velocity = 0;
     let axis: "none" | "horizontal" | "vertical" = "none";
+    let dragRaf: number | null = null;
+    let pendingScrollLeft = 0;
 
     const releasePointer = (pointerId: number) => {
       try {
@@ -262,6 +275,7 @@ export function HorizontalScroll({
       if (e.button !== 0) return;
       pauseAutoScroll();
       stopMomentum();
+      settlingRef.current = false;
       setSettling(false);
 
       isDown = true;
@@ -314,7 +328,12 @@ export function HorizontalScroll({
       if (axis === "vertical") return;
 
       e.preventDefault();
-      el.scrollLeft = startScroll - dx;
+      pendingScrollLeft = startScroll - dx;
+      if (dragRaf != null) return;
+      dragRaf = requestAnimationFrame(() => {
+        el.scrollLeft = pendingScrollLeft;
+        dragRaf = null;
+      });
     };
 
     const endDrag = (e: PointerEvent) => {
@@ -326,6 +345,12 @@ export function HorizontalScroll({
       axis = "none";
       setDragSurface(false);
       releasePointer(e.pointerId);
+
+      if (dragRaf != null) {
+        cancelAnimationFrame(dragRaf);
+        dragRaf = null;
+        el.scrollLeft = pendingScrollLeft;
+      }
 
       if (wasHorizontal) startMomentum(velocity);
       scheduleResume();
@@ -373,6 +398,7 @@ export function HorizontalScroll({
       el.removeEventListener("click", onClickCapture, true);
       clearTimeout(scrollEndTimer);
       stopMomentum();
+      if (dragRaf != null) cancelAnimationFrame(dragRaf);
       delete el.dataset.dragging;
     };
   }, [pauseAutoScroll, scheduleResume, scrollByPage, startMomentum, stopMomentum, measure, setDragSurface]);
@@ -470,13 +496,10 @@ export function HorizontalScroll({
         tabIndex={0}
         className={cn(
           "flex gap-5 overflow-x-auto overscroll-x-contain pb-4 pt-1 outline-none sm:gap-6",
-          "[touch-action:pan-y_pinch-zoom] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-          "[&[data-dragging=true]]:snap-none [&[data-dragging=true]]:scroll-auto [&[data-dragging=true]]:cursor-grabbing",
+          "[touch-action:pan-y_pinch-zoom] scroll-auto snap-none [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+          "[&[data-dragging=true]]:cursor-grabbing",
           "[&[data-dragging=true]_*]:pointer-events-none [&[data-dragging=true]_*]:select-none",
-          settling
-            ? "snap-none scroll-auto select-none"
-            : "snap-x snap-proximity scroll-smooth",
-          dragging || settling ? "select-none" : "cursor-grab",
+          dragging || settling ? "cursor-grabbing select-none" : "cursor-grab",
         )}
         style={{
           paddingLeft: EDGE_PADDING,
@@ -525,7 +548,7 @@ export function HorizontalScrollItem({
     <div
       data-scroll-item
       className={cn(
-        "w-[min(88vw,360px)] shrink-0 snap-center sm:w-[380px]",
+        "w-[min(88vw,360px)] shrink-0 sm:w-[380px]",
         className,
       )}
     >

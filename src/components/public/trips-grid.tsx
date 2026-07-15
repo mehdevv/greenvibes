@@ -44,6 +44,7 @@ export function TripsGrid() {
           <HorizontalScroll
             aria-label="Liste des voyages"
             itemCount={trips?.length ?? 0}
+            autoScrollInterval={0}
           >
             {(trips ?? []).map((trip) => (
               <HorizontalScrollItem key={trip.id}>
