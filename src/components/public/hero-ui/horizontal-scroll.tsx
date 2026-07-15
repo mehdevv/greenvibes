@@ -12,10 +12,10 @@ import { cn } from "@/lib/utils";
 
 const EDGE_PADDING = "max(1.25rem, calc((100vw - 80rem) / 2 + 1.25rem))";
 const RESUME_DELAY = 4500;
-const DRAG_THRESHOLD = 4;
-const MOMENTUM_FRICTION = 0.94;
-const MOMENTUM_MAX_VELOCITY = 3;
-const MOMENTUM_MIN_VELOCITY = 0.02;
+const DRAG_THRESHOLD = 3;
+const MOMENTUM_FRICTION = 0.92;
+const MOMENTUM_MAX_VELOCITY = 4.5;
+const MOMENTUM_MIN_VELOCITY = 0.015;
 
 type HorizontalScrollProps = {
   children: ReactNode;
@@ -44,6 +44,17 @@ export function HorizontalScroll({
   const [settling, setSettling] = useState(false);
   const draggingRef = useRef(false);
   const momentumRef = useRef<number | null>(null);
+  const activePointerId = useRef<number | null>(null);
+
+  const setDragSurface = useCallback((active: boolean) => {
+    const el = trackRef.current;
+    draggingRef.current = active;
+    if (el) {
+      if (active) el.dataset.dragging = "true";
+      else delete el.dataset.dragging;
+    }
+    setDragging(active);
+  }, []);
 
   const pausedRef = useRef(false);
   const inViewRef = useRef(true);
@@ -188,7 +199,7 @@ export function HorizontalScroll({
       ro.disconnect();
       io.disconnect();
     };
-  }, [measure, children]);
+  }, [measure]);
 
   useEffect(() => {
     const el = trackRef.current;
@@ -196,9 +207,15 @@ export function HorizontalScroll({
 
     const onWheel = (e: WheelEvent) => {
       if (el.scrollWidth <= el.clientWidth + 1) return;
+      if (draggingRef.current) return;
+
       const absX = Math.abs(e.deltaX);
       const absY = Math.abs(e.deltaY);
-      if (absX <= absY || e.deltaX === 0) return;
+
+      // Let vertical wheel / trackpad scroll pass through to the page.
+      if (absY >= absX || e.deltaX === 0) return;
+
+      // Shift+wheel or clear horizontal intent → carousel scroll.
       e.preventDefault();
       stopMomentum();
       el.scrollLeft += e.deltaX;
@@ -226,19 +243,33 @@ export function HorizontalScroll({
     let isDown = false;
     let moved = false;
     let startX = 0;
+    let startY = 0;
     let startScroll = 0;
     let lastX = 0;
     let lastTime = 0;
     let velocity = 0;
+    let axis: "none" | "horizontal" | "vertical" = "none";
+
+    const releasePointer = (pointerId: number) => {
+      try {
+        el.releasePointerCapture(pointerId);
+      } catch {
+        /* ignore */
+      }
+    };
 
     const onPointerDown = (e: PointerEvent) => {
+      if (e.button !== 0) return;
       pauseAutoScroll();
       stopMomentum();
       setSettling(false);
-      if (e.button !== 0) return;
+
       isDown = true;
       moved = false;
+      axis = "none";
+      activePointerId.current = e.pointerId;
       startX = e.clientX;
+      startY = e.clientY;
       lastX = e.clientX;
       lastTime = performance.now();
       velocity = 0;
@@ -246,8 +277,10 @@ export function HorizontalScroll({
     };
 
     const onPointerMove = (e: PointerEvent) => {
-      if (!isDown) return;
+      if (!isDown || activePointerId.current !== e.pointerId) return;
+
       const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
       const now = performance.now();
       const dt = now - lastTime;
       if (dt > 0) {
@@ -256,32 +289,50 @@ export function HorizontalScroll({
       lastX = e.clientX;
       lastTime = now;
 
-      if (!moved && Math.abs(dx) > DRAG_THRESHOLD) {
+      if (axis === "none") {
+        if (Math.abs(dx) < DRAG_THRESHOLD && Math.abs(dy) < DRAG_THRESHOLD) return;
+
+        if (Math.abs(dy) > Math.abs(dx)) {
+          axis = "vertical";
+          isDown = false;
+          activePointerId.current = null;
+          scheduleResume();
+          return;
+        }
+
+        axis = "horizontal";
         moved = true;
-        setDragging(true);
-        draggingRef.current = true;
-        if (e.pointerType === "mouse") {
-          try {
-            el.setPointerCapture(e.pointerId);
-          } catch {
-            /* ignore */
-          }
+        setDragSurface(true);
+
+        try {
+          el.setPointerCapture(e.pointerId);
+        } catch {
+          /* ignore */
         }
       }
 
-      if (moved) {
-        if (e.pointerType === "mouse") e.preventDefault();
-        el.scrollLeft = startScroll - dx;
-      }
+      if (axis === "vertical") return;
+
+      e.preventDefault();
+      el.scrollLeft = startScroll - dx;
     };
 
-    const endDrag = () => {
-      if (!isDown) return;
+    const endDrag = (e: PointerEvent) => {
+      if (!isDown || activePointerId.current !== e.pointerId) return;
+
+      const wasHorizontal = axis === "horizontal" && moved;
       isDown = false;
-      setDragging(false);
-      draggingRef.current = false;
-      if (moved) startMomentum(velocity);
+      activePointerId.current = null;
+      axis = "none";
+      setDragSurface(false);
+      releasePointer(e.pointerId);
+
+      if (wasHorizontal) startMomentum(velocity);
       scheduleResume();
+    };
+
+    const onDragStart = (e: DragEvent) => {
+      if (isDown || draggingRef.current) e.preventDefault();
     };
 
     const onClickCapture = (e: MouseEvent) => {
@@ -303,25 +354,28 @@ export function HorizontalScroll({
     el.addEventListener("wheel", onWheel, { passive: false });
     el.addEventListener("keydown", onKeyDown);
     el.addEventListener("pointerdown", onPointerDown);
+    el.addEventListener("pointermove", onPointerMove, { passive: false });
+    el.addEventListener("pointerup", endDrag);
+    el.addEventListener("pointercancel", endDrag);
+    el.addEventListener("dragstart", onDragStart);
     el.addEventListener("scroll", onScrollEnd, { passive: true });
-    window.addEventListener("pointermove", onPointerMove, { passive: false });
-    window.addEventListener("pointerup", endDrag);
-    window.addEventListener("pointercancel", endDrag);
     el.addEventListener("click", onClickCapture, true);
 
     return () => {
       el.removeEventListener("wheel", onWheel);
       el.removeEventListener("keydown", onKeyDown);
       el.removeEventListener("pointerdown", onPointerDown);
+      el.removeEventListener("pointermove", onPointerMove);
+      el.removeEventListener("pointerup", endDrag);
+      el.removeEventListener("pointercancel", endDrag);
+      el.removeEventListener("dragstart", onDragStart);
       el.removeEventListener("scroll", onScrollEnd);
-      window.removeEventListener("pointermove", onPointerMove);
-      window.removeEventListener("pointerup", endDrag);
-      window.removeEventListener("pointercancel", endDrag);
       el.removeEventListener("click", onClickCapture, true);
       clearTimeout(scrollEndTimer);
       stopMomentum();
+      delete el.dataset.dragging;
     };
-  }, [pauseAutoScroll, scheduleResume, scrollByPage, startMomentum, stopMomentum, measure]);
+  }, [pauseAutoScroll, scheduleResume, scrollByPage, startMomentum, stopMomentum, measure, setDragSurface]);
 
   useEffect(() => {
     if (!autoScrollEnabled) return;
@@ -416,11 +470,13 @@ export function HorizontalScroll({
         tabIndex={0}
         className={cn(
           "flex gap-5 overflow-x-auto overscroll-x-contain pb-4 pt-1 outline-none sm:gap-6",
-          "touch-pan-x [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
-          dragging || settling
+          "[touch-action:pan-y_pinch-zoom] [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden",
+          "[&[data-dragging=true]]:snap-none [&[data-dragging=true]]:scroll-auto [&[data-dragging=true]]:cursor-grabbing",
+          "[&[data-dragging=true]_*]:pointer-events-none [&[data-dragging=true]_*]:select-none",
+          settling
             ? "snap-none scroll-auto select-none"
             : "snap-x snap-proximity scroll-smooth",
-          dragging ? "cursor-grabbing" : "cursor-grab",
+          dragging || settling ? "select-none" : "cursor-grab",
         )}
         style={{
           paddingLeft: EDGE_PADDING,

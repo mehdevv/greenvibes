@@ -9,6 +9,7 @@ import {
   reservationStatusLabel,
 } from "@/api";
 import { TripFormDialog } from "@/components/admin/trip-form-dialog";
+import { PortalLoginQrSection } from "@/components/admin/login-qr-cards";
 import { useAuth } from "@/lib/auth";
 import { computeAdminOverviewStats } from "@/lib/admin-overview-stats";
 import { tripSpotsRemaining } from "@/lib/availability";
@@ -142,6 +143,8 @@ function AdminDashboardPage() {
           )}
         </div>
       </div>
+
+      <PortalLoginQrSection />
 
       <section className="space-y-3">
         <SectionTitle>Activité récente</SectionTitle>

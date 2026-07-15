@@ -14,6 +14,8 @@ const RESERVED_SLUGS = new Set([
   "r",
   "setup",
   "trips",
+  "employe",
+  "entree",
   "a-propos",
   "index",
 ]);

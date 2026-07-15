@@ -1,4 +1,5 @@
 export * from "./admin-users";
+export * from "./employee-magic-login";
 export * from "./types";
 export * from "./auth";
 export * from "./destinations";

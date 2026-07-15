@@ -47,6 +47,7 @@ import { Route as AdminTripsIndexRouteImport } from './routes/admin/trips/index'
 import { Route as AdminOffresIndexRouteImport } from './routes/admin/offres/index'
 import { Route as ReservationConfirmationRefRouteImport } from './routes/reservation/confirmation/$ref'
 import { Route as EmployeTripsTripIdRouteImport } from './routes/employe/trips/$tripId'
+import { Route as EmployeEntreeTokenRouteImport } from './routes/employe/entree/$token'
 import { Route as AdminTripsTripIdRouteImport } from './routes/admin/trips/$tripId'
 import { Route as AdminOffresNouveauRouteImport } from './routes/admin/offres/nouveau'
 import { Route as AdminOffresIdRouteImport } from './routes/admin/offres/$id'
@@ -245,6 +246,11 @@ const EmployeTripsTripIdRoute = EmployeTripsTripIdRouteImport.update({
   path: '/$tripId',
   getParentRoute: () => EmployeTripsRoute,
 } as any)
+const EmployeEntreeTokenRoute = EmployeEntreeTokenRouteImport.update({
+  id: '/entree/$token',
+  path: '/entree/$token',
+  getParentRoute: () => EmployeRouteRoute,
+} as any)
 const AdminTripsTripIdRoute = AdminTripsTripIdRouteImport.update({
   id: '/$tripId',
   path: '/$tripId',
@@ -319,6 +325,7 @@ export interface FileRoutesByFullPath {
   '/admin/offres/$id': typeof AdminOffresIdRoute
   '/admin/offres/nouveau': typeof AdminOffresNouveauRoute
   '/admin/trips/$tripId': typeof AdminTripsTripIdRoute
+  '/employe/entree/$token': typeof EmployeEntreeTokenRoute
   '/employe/trips/$tripId': typeof EmployeTripsTripIdRoute
   '/reservation/confirmation/$ref': typeof ReservationConfirmationRefRoute
   '/admin/offres/': typeof AdminOffresIndexRoute
@@ -362,6 +369,7 @@ export interface FileRoutesByTo {
   '/admin/offres/$id': typeof AdminOffresIdRoute
   '/admin/offres/nouveau': typeof AdminOffresNouveauRoute
   '/admin/trips/$tripId': typeof AdminTripsTripIdRoute
+  '/employe/entree/$token': typeof EmployeEntreeTokenRoute
   '/employe/trips/$tripId': typeof EmployeTripsTripIdRoute
   '/reservation/confirmation/$ref': typeof ReservationConfirmationRefRoute
   '/admin/offres': typeof AdminOffresIndexRoute
@@ -409,6 +417,7 @@ export interface FileRoutesById {
   '/admin/offres/$id': typeof AdminOffresIdRoute
   '/admin/offres/nouveau': typeof AdminOffresNouveauRoute
   '/admin/trips/$tripId': typeof AdminTripsTripIdRoute
+  '/employe/entree/$token': typeof EmployeEntreeTokenRoute
   '/employe/trips/$tripId': typeof EmployeTripsTripIdRoute
   '/reservation/confirmation/$ref': typeof ReservationConfirmationRefRoute
   '/admin/offres/': typeof AdminOffresIndexRoute
@@ -457,6 +466,7 @@ export interface FileRouteTypes {
     | '/admin/offres/$id'
     | '/admin/offres/nouveau'
     | '/admin/trips/$tripId'
+    | '/employe/entree/$token'
     | '/employe/trips/$tripId'
     | '/reservation/confirmation/$ref'
     | '/admin/offres/'
@@ -500,6 +510,7 @@ export interface FileRouteTypes {
     | '/admin/offres/$id'
     | '/admin/offres/nouveau'
     | '/admin/trips/$tripId'
+    | '/employe/entree/$token'
     | '/employe/trips/$tripId'
     | '/reservation/confirmation/$ref'
     | '/admin/offres'
@@ -546,6 +557,7 @@ export interface FileRouteTypes {
     | '/admin/offres/$id'
     | '/admin/offres/nouveau'
     | '/admin/trips/$tripId'
+    | '/employe/entree/$token'
     | '/employe/trips/$tripId'
     | '/reservation/confirmation/$ref'
     | '/admin/offres/'
@@ -843,6 +855,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EmployeTripsTripIdRouteImport
       parentRoute: typeof EmployeTripsRoute
     }
+    '/employe/entree/$token': {
+      id: '/employe/entree/$token'
+      path: '/entree/$token'
+      fullPath: '/employe/entree/$token'
+      preLoaderRoute: typeof EmployeEntreeTokenRouteImport
+      parentRoute: typeof EmployeRouteRoute
+    }
     '/admin/trips/$tripId': {
       id: '/admin/trips/$tripId'
       path: '/$tripId'
@@ -1005,6 +1024,7 @@ interface EmployeRouteRouteChildren {
   EmployeLoginRoute: typeof EmployeLoginRoute
   EmployeReservationsRoute: typeof EmployeReservationsRoute
   EmployeTripsRoute: typeof EmployeTripsRouteWithChildren
+  EmployeEntreeTokenRoute: typeof EmployeEntreeTokenRoute
 }
 
 const EmployeRouteRouteChildren: EmployeRouteRouteChildren = {
@@ -1012,6 +1032,7 @@ const EmployeRouteRouteChildren: EmployeRouteRouteChildren = {
   EmployeLoginRoute: EmployeLoginRoute,
   EmployeReservationsRoute: EmployeReservationsRoute,
   EmployeTripsRoute: EmployeTripsRouteWithChildren,
+  EmployeEntreeTokenRoute: EmployeEntreeTokenRoute,
 }
 
 const EmployeRouteRouteWithChildren = EmployeRouteRoute._addFileChildren(

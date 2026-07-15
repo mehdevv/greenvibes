@@ -7,10 +7,11 @@ import {
   useUpdateAdminUser,
 } from "@/api";
 import type { AdminPermissions } from "@/api/types";
+import { EmployeeMagicLinkDialog } from "@/components/admin/employee-magic-link-dialog";
 import { PermissionMatrix, PermissionSummary } from "@/components/admin/permission-matrix";
 import { useAuth } from "@/lib/auth";
 import { DEFAULT_WORKER_PERMISSIONS } from "@/lib/admin-permissions";
-import { getSiteOrigin } from "@/lib/trip-slug";
+import { getPortalLoginUrl } from "@/lib/portal-login-urls";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,7 +25,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Copy, Pencil, Plus, Trash2, Users } from "lucide-react";
+import { Copy, Pencil, Plus, QrCode, Trash2, Users } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/equipe")({
@@ -48,8 +49,9 @@ function AdminTeamPage() {
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editId, setEditId] = useState<string | null>(null);
+  const [magicWorker, setMagicWorker] = useState<{ id: string; name: string } | null>(null);
 
-  const loginUrl = `${getSiteOrigin()}/employe/login`;
+  const employeeLoginUrl = getPortalLoginUrl("employee");
 
   const workers = useMemo(
     () => members.filter((m) => m.role !== "super_admin"),
@@ -69,9 +71,9 @@ function AdminTeamPage() {
     );
   }
 
-  const handleCopyLink = async () => {
+  const handleCopyGenericLogin = async () => {
     try {
-      await navigator.clipboard.writeText(loginUrl);
+      await navigator.clipboard.writeText(employeeLoginUrl);
       toast.success("Lien de connexion copié");
     } catch {
       toast.error("Impossible de copier");
@@ -84,7 +86,7 @@ function AdminTeamPage() {
         <div>
           <h1 className="font-display text-2xl font-bold text-foreground md:text-3xl">Équipe</h1>
           <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            Créez des comptes employés, définissez leurs droits et partagez le lien de connexion.
+            Créez des comptes employés, définissez leurs droits et générez un QR / lien de connexion unique par personne.
           </p>
         </div>
         <Button className="gap-2 rounded-full" onClick={() => setCreateOpen(true)}>
@@ -95,16 +97,23 @@ function AdminTeamPage() {
 
       <Card>
         <CardHeader className="pb-3">
-          <CardTitle className="text-base">Lien de connexion employés</CardTitle>
+          <CardTitle className="text-base">Connexion employés</CardTitle>
         </CardHeader>
-        <CardContent className="flex flex-wrap items-center gap-3">
-          <code className="flex-1 rounded-lg border border-border bg-secondary/40 px-3 py-2 text-sm">
-            {loginUrl}
-          </code>
-          <Button type="button" variant="outline" className="gap-1.5" onClick={handleCopyLink}>
-            <Copy className="h-4 w-4" />
-            Copier le lien
-          </Button>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Chaque employé dispose d&apos;un <strong className="font-medium text-foreground">QR code et lien à usage unique</strong>{" "}
+            (bouton sur sa fiche). Après la première connexion, régénérez-en un nouveau si besoin.
+          </p>
+          <div className="flex flex-wrap items-center gap-3 rounded-lg border border-border bg-secondary/30 p-3">
+            <p className="flex-1 text-xs text-muted-foreground">
+              Connexion manuelle (email + mot de passe) :{" "}
+              <code className="text-foreground">{employeeLoginUrl}</code>
+            </p>
+            <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={handleCopyGenericLogin}>
+              <Copy className="h-4 w-4" />
+              Copier
+            </Button>
+          </div>
         </CardContent>
       </Card>
 
@@ -145,7 +154,22 @@ function AdminTeamPage() {
                   )}
                 </div>
                 {member.role === "worker" && (
-                  <div className="flex gap-2">
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      className="gap-1.5"
+                      onClick={() =>
+                        setMagicWorker({
+                          id: member.id,
+                          name: member.fullName || member.email,
+                        })
+                      }
+                    >
+                      <QrCode className="h-3.5 w-3.5" />
+                      QR / Lien unique
+                    </Button>
                     <Button
                       type="button"
                       variant="outline"
@@ -194,14 +218,24 @@ function AdminTeamPage() {
         pending={createUser.isPending}
         onSubmit={async (data) => {
           try {
-            await createUser.mutateAsync(data);
-            toast.success("Compte créé — partagez le lien de connexion");
+            const result = await createUser.mutateAsync(data);
+            toast.success("Compte créé — générez le QR de connexion");
             setCreateOpen(false);
+            setMagicWorker({ id: result.id, name: data.fullName });
           } catch (err) {
             toast.error(err instanceof Error ? err.message : "Erreur");
           }
         }}
       />
+
+      {magicWorker && (
+        <EmployeeMagicLinkDialog
+          open
+          onOpenChange={(open) => !open && setMagicWorker(null)}
+          workerId={magicWorker.id}
+          workerName={magicWorker.name}
+        />
+      )}
 
       {editing && (
         <WorkerFormDialog

@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 export const Route = createFileRoute("/employe")({
   beforeLoad: async ({ location }) => {
     if (location.pathname === "/employe/login") return;
+    if (location.pathname.startsWith("/employe/entree/")) return;
 
     const { data: { session } } = await supabaseEmployee.auth.getSession();
     if (!session) {
@@ -46,7 +47,7 @@ function EmployeeLayout() {
 
   const visibleNavItems = useMemo(() => navItems.filter((item) => item.show(can)), [can]);
 
-  if (pathname === "/employe/login") {
+  if (pathname === "/employe/login" || pathname.startsWith("/employe/entree/")) {
     return <Outlet />;
   }
 

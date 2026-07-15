@@ -10,7 +10,8 @@
     "preview": "vite preview",
     "supabase:login": "supabase login",
     "supabase:link": "supabase link --project-ref loubwjuviwvjbeyxabyw",
-    "supabase:deploy": "supabase functions deploy setup-admin --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy create-reservation --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy send-reservation-notification --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy manage-admin-user --project-ref loubwjuviwvjbeyxabyw"
+    "supabase:deploy:employee-magic-login": "supabase functions deploy employee-magic-login --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw",
+    "supabase:deploy": "supabase functions deploy setup-admin --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy create-reservation --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy send-reservation-notification --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy manage-admin-user --project-ref loubwjuviwvjbeyxabyw && supabase functions deploy employee-magic-login --no-verify-jwt --project-ref loubwjuviwvjbeyxabyw"
   },
   "dependencies": {
     "@hookform/resolvers": "^5.0.1",
@@ -56,6 +57,7 @@
     "react": "^19.2.6",
     "react-day-picker": "^9.6.7",
     "react-dom": "^19.2.6",
+    "react-qr-code": "^2.2.0",
     "react-resizable-panels": "^2.1.9",
     "recharts": "^2.15.3",
     "sonner": "^2.0.3",

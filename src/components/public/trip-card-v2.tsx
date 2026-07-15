@@ -40,6 +40,7 @@ export function TripCardV2({ trip, horizontal }: TripCardProps) {
         <img
           src={trip.photoUrl ?? ""}
           alt={trip.title}
+          draggable={false}
           className="h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-105"
           loading="lazy"
         />
