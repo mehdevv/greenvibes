@@ -19,6 +19,7 @@ import {
   HeroTitle,
 } from "@/components/public/hero-ui";
 import { ReservationPageSkeleton } from "@/components/public/reservation-page-skeleton";
+import { SuggestedTrips } from "@/components/public/suggested-trips";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -382,6 +383,8 @@ function ReservationPage() {
           </HeroCard>
         )}
       </HeroContainer>
+
+      <SuggestedTrips excludeTripId={trip.id} />
     </PublicLayout>
   );
 }

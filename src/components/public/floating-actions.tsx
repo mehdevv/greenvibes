@@ -1,3 +1,4 @@
+import { Link, useRouterState } from "@tanstack/react-router";
 import { CalendarCheck } from "lucide-react";
 import { AGENCY_CONTACT } from "@/lib/constants";
 import { cn } from "@/lib/utils";
@@ -19,24 +20,41 @@ const bubbleBase =
 
 export function FloatingActions() {
   const whatsappHref = `${AGENCY_CONTACT.whatsapp}?text=${encodeURIComponent(AGENCY_CONTACT.whatsappMessage)}`;
+  const onReservationPage = useRouterState({
+    select: (state) => state.location.pathname.startsWith("/reservation"),
+  });
+
+  const offersBubbleClass = cn(
+    bubbleBase,
+    "bg-forest text-white hover:bg-leaf hover:shadow-xl",
+  );
 
   return (
     <div
       className="fixed bottom-5 right-5 z-50 flex flex-col items-center gap-3 sm:bottom-6 sm:right-6"
       aria-label="Actions rapides"
     >
-      <button
-        type="button"
-        onClick={scrollToOffers}
-        aria-label="Voir les offres et réserver"
-        title="Réserver une sortie"
-        className={cn(
-          bubbleBase,
-          "bg-forest text-white hover:bg-leaf hover:shadow-xl",
-        )}
-      >
-        <CalendarCheck className="h-6 w-6" />
-      </button>
+      {onReservationPage ? (
+        <Link
+          to="/"
+          hash="voyages"
+          aria-label="Voir les voyages sur l'accueil"
+          title="Voir les voyages"
+          className={offersBubbleClass}
+        >
+          <CalendarCheck className="h-6 w-6" />
+        </Link>
+      ) : (
+        <button
+          type="button"
+          onClick={scrollToOffers}
+          aria-label="Voir les offres et réserver"
+          title="Réserver une sortie"
+          className={offersBubbleClass}
+        >
+          <CalendarCheck className="h-6 w-6" />
+        </button>
+      )}
 
       <a
         href={whatsappHref}
