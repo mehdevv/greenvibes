@@ -5,7 +5,7 @@ import {
   tripAvailabilityBarColor,
   tripSpotsRemaining,
 } from "@/lib/constants";
-import { formatDepartureCountdown, formatDepartureDate } from "@/lib/trip-dates";
+import { formatDepartureCountdown, formatDepartureDate, formatDepartureTimeLeftCompact } from "@/lib/trip-dates";
 import {
   HeroBadge,
   HeroCard,
@@ -31,6 +31,7 @@ export function TripCardV2({ trip, horizontal, eagerImage }: TripCardProps) {
   const fillPct = trip.capacity > 0 ? ((trip.capacity - remaining) / trip.capacity) * 100 : 100;
   const countdown = formatDepartureCountdown(trip);
   const departureLabel = formatDepartureDate(trip);
+  const timeLeft = formatDepartureTimeLeftCompact(trip);
 
   return (
     <HeroCard
@@ -125,7 +126,13 @@ export function TripCardV2({ trip, horizontal, eagerImage }: TripCardProps) {
             "mt-6 py-3.5",
           )}
         >
-          {full ? "Liste d'attente" : "Réserver"}
+          {full
+            ? timeLeft
+              ? `Liste d'attente · ${timeLeft}`
+              : "Liste d'attente"
+            : timeLeft
+              ? `Réserver · ${timeLeft}`
+              : "Réserver"}
         </Link>
       </div>
     </HeroCard>

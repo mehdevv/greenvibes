@@ -26,7 +26,7 @@ import { toast } from "sonner";
 import { ReservationReceipt } from "@/components/public/reservation-receipt";
 import { ReservationSuccessModal } from "@/components/public/reservation-success-modal";
 import type { ReservationReceiptData } from "@/lib/reservation-receipt";
-import { formatDepartureCountdown, formatDepartureDate, isTripPublicVisible } from "@/lib/trip-dates";
+import { formatDepartureCountdown, formatDepartureDate, formatDepartureTimeLeftCompact, isTripPublicVisible } from "@/lib/trip-dates";
 import { isValidPhone } from "@/lib/phone";
 import { preloadImage } from "@/lib/preload-images";
 import { cn } from "@/lib/utils";
@@ -113,6 +113,7 @@ function ReservationPage() {
   const fillPct = trip.capacity > 0 ? ((trip.capacity - remaining) / trip.capacity) * 100 : 100;
   const countdown = formatDepartureCountdown(trip);
   const departureLabel = formatDepartureDate(trip);
+  const timeLeft = formatDepartureTimeLeftCompact(trip);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -321,7 +322,11 @@ function ReservationPage() {
                 disabled={createReservation.isPending}
                 className="w-full"
               >
-                Rejoindre la liste d&apos;attente
+                {createReservation.isPending
+                  ? "Envoi..."
+                  : timeLeft
+                    ? `Rejoindre la liste d'attente · ${timeLeft}`
+                    : "Rejoindre la liste d'attente"}
               </HeroButton>
             </form>
           </HeroCard>
@@ -377,7 +382,11 @@ function ReservationPage() {
                 disabled={createReservation.isPending}
                 className="w-full"
               >
-                {createReservation.isPending ? "Envoi..." : "Confirmer ma réservation"}
+                {createReservation.isPending
+                  ? "Envoi..."
+                  : timeLeft
+                    ? `Confirmer ma réservation · ${timeLeft}`
+                    : "Confirmer ma réservation"}
               </HeroButton>
             </form>
           </HeroCard>
