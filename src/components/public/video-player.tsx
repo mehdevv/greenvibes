@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type MouseEvent, type ReactNode } from "react";
 import { Pause, Play } from "lucide-react";
+import { MediaLoadingOverlay } from "@/components/ui/media-loader";
 import { cn } from "@/lib/utils";
 
 type VideoPlayerProps = {
@@ -29,6 +30,8 @@ export function VideoPlayer({
   useEffect(() => {
     const video = ref.current;
     if (!video) return;
+    setLoading(true);
+    setReady(false);
 
     const onTime = () => {
       if (!video.duration || !Number.isFinite(video.duration)) return;
@@ -78,7 +81,7 @@ export function VideoPlayer({
       video.removeEventListener("pause", onPause);
       video.removeEventListener("ended", onEnded);
     };
-  }, []);
+  }, [src]);
 
   const toggle = () => {
     const video = ref.current;
@@ -107,12 +110,18 @@ export function VideoPlayer({
         poster={poster}
         playsInline
         preload="metadata"
-        className={cn("h-full w-full object-cover", videoClassName)}
+        className={cn(
+          "h-full w-full object-cover transition-opacity duration-300",
+          ready ? "opacity-100" : "opacity-0",
+          videoClassName,
+        )}
       >
         <source src={src} type="video/mp4" />
       </video>
 
-      {!playing && (
+      {!ready && <MediaLoadingOverlay label="Chargement de la vidéo…" dark />}
+
+      {!playing && ready && (
         <img
           src={poster}
           alt=""

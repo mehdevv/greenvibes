@@ -18,6 +18,7 @@ import {
 import { useAuth } from "@/lib/auth";
 import { uploadVideoToStorage } from "@/lib/upload-media";
 import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { LoadingImage, LoadingVideo } from "@/components/ui/media-loader";
 import { HeroCard, HeroContainer, HeroSection } from "@/components/public/hero-ui";
 import { Reveal } from "@/components/motion";
 import { cn } from "@/lib/utils";
@@ -183,12 +184,14 @@ function GalleryTile({
   const isVideo = item.type === "video" || isVideoUrl(resolvedSrc);
 
   const card = isVideo ? (
-    <video
+    <LoadingVideo
       src={videoSrc}
       muted
       playsInline
       preload="metadata"
-      className="aspect-video w-full object-cover"
+      containerClassName="aspect-video w-full"
+      className="object-cover"
+      loaderLabel="Chargement de la vidéo…"
     />
   ) : canEdit ? (
     <EditableImage
@@ -200,7 +203,14 @@ function GalleryTile({
       label="Remplacer"
     />
   ) : (
-    <img src={resolvedSrc} alt={item.title} loading="lazy" className="w-full object-cover" />
+    <LoadingImage
+      src={resolvedSrc}
+      alt={item.title}
+      loading="lazy"
+      containerClassName="w-full"
+      className="object-cover"
+      loaderLabel="Chargement de l'image…"
+    />
   );
 
   if (canEdit) {
@@ -291,15 +301,25 @@ function MediaPreview({ item, src }: { item: GalleryMediaItem; src: string }) {
   const isVideo = item.type === "video" || isVideoUrl(src);
   if (isVideo) {
     return (
-      <video
+      <LoadingVideo
         src={src}
         controls
         autoPlay
-        className="max-h-[80vh] w-full rounded-lg object-contain"
+        containerClassName="w-full min-h-[40vh]"
+        className="max-h-[80vh] rounded-lg object-contain"
+        loaderLabel="Chargement de la vidéo…"
+        darkLoader
       />
     );
   }
   return (
-    <img src={src} alt={item.title} className="max-h-[80vh] w-full rounded-lg object-contain" />
+    <LoadingImage
+      src={src}
+      alt={item.title}
+      containerClassName="w-full min-h-[40vh]"
+      className="max-h-[80vh] rounded-lg object-contain"
+      loaderLabel="Chargement de l'image…"
+      darkLoader
+    />
   );
 }

@@ -6,6 +6,7 @@ import { EditableText } from "@/components/admin/editable-text";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 import { SectionWave } from "@/components/public/section-wave";
+import { LoadingVideo } from "@/components/ui/media-loader";
 import {
   HeroButton,
   HeroContainer,
@@ -22,7 +23,6 @@ export function HeroSplit() {
   const canEdit = Boolean(user && canWrite);
   const [index, setIndex] = useState(0);
   const [muted, setMuted] = useState(true);
-  const [videoReady, setVideoReady] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
 
   const safeIndex = videos.length > 0 ? index % videos.length : 0;
@@ -42,7 +42,6 @@ export function HeroSplit() {
   useEffect(() => {
     const video = videoRef.current;
     if (!video || !current) return;
-    setVideoReady(false);
     video.load();
     video.play().catch(() => {});
   }, [safeIndex, current?.src]);
@@ -84,22 +83,19 @@ export function HeroSplit() {
           <HeroReveal delay={0.15}>
             <HeroMediaFrame className={cn(canEdit && "group")}>
               {current ? (
-                <video
+                <LoadingVideo
                   key={current.src}
                   ref={videoRef}
-                  className={cn(
-                    "aspect-[4/3] w-full object-cover transition-opacity duration-500 sm:aspect-video lg:aspect-[4/3]",
-                    videoReady ? "opacity-100" : "opacity-0",
-                  )}
+                  className="aspect-[4/3] w-full object-cover sm:aspect-video lg:aspect-[4/3]"
+                  containerClassName="w-full"
                   autoPlay
                   muted={muted}
                   playsInline
                   preload="auto"
-                  onCanPlay={() => setVideoReady(true)}
                   onEnded={advance}
                 >
                   <source src={current.src} type="video/mp4" />
-                </video>
+                </LoadingVideo>
               ) : (
                 <div className="flex aspect-[4/3] items-center justify-center bg-forest/10 text-sm text-muted-foreground">
                   Aucune vidéo — ajoutez-en une en mode édition
@@ -111,7 +107,11 @@ export function HeroSplit() {
                   current={current}
                   videos={videos}
                   currentIndex={safeIndex}
-                  onReplaced={() => setVideoReady(false)}
+                  onReplaced={() => {
+                    const video = videoRef.current;
+                    video?.load();
+                    video?.play().catch(() => {});
+                  }}
                   onDeleted={() => setIndex(0)}
                 />
               )}

@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { useListTrips, useTripsRealtime } from "@/api";
 import { EditableBlockHeader } from "@/components/admin/editable-text";
 import { TripCardV2 } from "@/components/public/trip-card-v2";
@@ -6,12 +7,18 @@ import {
   HorizontalScroll,
   HorizontalScrollItem,
 } from "@/components/public/hero-ui";
+import { preloadImages } from "@/lib/preload-images";
 import { Skeleton } from "@/components/ui/skeleton";
 import { ChevronRight } from "lucide-react";
 
 export function TripsGrid() {
   useTripsRealtime();
   const { data: trips, isLoading } = useListTrips();
+
+  useEffect(() => {
+    if (!trips?.length) return;
+    preloadImages(trips.map((t) => t.photoUrl));
+  }, [trips]);
 
   return (
     <section
@@ -30,7 +37,6 @@ export function TripsGrid() {
         <HorizontalScroll
           className="mt-10"
           aria-label="Chargement des voyages"
-          autoScrollInterval={0}
           showDots={false}
         >
           {Array.from({ length: 3 }).map((_, i) => (
@@ -41,14 +47,10 @@ export function TripsGrid() {
         </HorizontalScroll>
       ) : (trips?.length ?? 0) > 0 ? (
         <div className="mt-10">
-          <HorizontalScroll
-            aria-label="Liste des voyages"
-            itemCount={trips?.length ?? 0}
-            autoScrollInterval={0}
-          >
+          <HorizontalScroll aria-label="Liste des voyages" showDots={false}>
             {(trips ?? []).map((trip) => (
               <HorizontalScrollItem key={trip.id}>
-                <TripCardV2 trip={trip} horizontal />
+                <TripCardV2 trip={trip} horizontal eagerImage />
               </HorizontalScrollItem>
             ))}
           </HorizontalScroll>

@@ -38,6 +38,7 @@ import reservationDisponibilite from "@/assets/reservation-disponibilite.png";
 import circuitsGuide from "@/assets/circuits-guide.png";
 import paiementSecurise from "@/assets/paiement-securise.png";
 import accompagnement from "@/assets/accompagnement.png";
+import { LoadingImage } from "@/components/ui/media-loader";
 
 const experiences = [
   {
@@ -225,10 +226,12 @@ export function ExperienceCategories() {
                 className="group relative block overflow-hidden rounded-md border border-border bg-background shadow-soft transition hover:shadow-elevated"
               >
                 <div className="aspect-[4/3] overflow-hidden">
-                  <img
+                  <LoadingImage
                     src={exp.image}
                     alt=""
-                    className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                    containerClassName="h-full w-full"
+                    className="object-cover transition duration-500 group-hover:scale-105"
+                    loaderLabel="Chargement…"
                   />
                 </div>
                 <div className="p-5">
@@ -350,11 +353,13 @@ export function ServicesDetailed() {
                   <span className="absolute right-4 top-4 rounded-[4px] bg-card/90 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-forest shadow-sm backdrop-blur">
                     {block.subtitle}
                   </span>
-                  <img
+                  <LoadingImage
                     src={block.image}
                     alt={block.title}
-                    className="h-full max-h-44 w-full object-contain transition duration-500 group-hover:scale-[1.02] sm:max-h-56"
                     loading="lazy"
+                    containerClassName="h-full w-full"
+                    className="max-h-44 object-contain transition duration-500 group-hover:scale-[1.02] sm:max-h-56"
+                    loaderLabel="Chargement…"
                   />
                 </div>
               </article>
@@ -494,10 +499,12 @@ export function GalleryPreview() {
                   i > 0 && "aspect-[4/3]",
                 )}
               >
-              <img
+              <LoadingImage
                 src={resolveCoverImage(item.storagePath, PLACEHOLDER_IMAGES.hero)}
                 alt={item.title}
-                className="h-full w-full object-cover transition duration-500 group-hover:scale-105"
+                containerClassName="h-full w-full"
+                className="object-cover transition duration-500 group-hover:scale-105"
+                loaderLabel="Chargement…"
               />
               <div className="absolute inset-0 bg-gradient-to-t from-forest/70 to-transparent opacity-0 transition group-hover:opacity-100" />
               <span className="absolute bottom-3 left-3 text-sm font-medium opacity-0 transition group-hover:opacity-100">
@@ -536,10 +543,12 @@ export function BlogPreview() {
               params={{ slug: post.slug }}
               className="group block overflow-hidden rounded-md border border-border bg-card transition hover:shadow-elevated"
             >
-            <img
+            <LoadingImage
               src={resolveCoverImage(post.coverImage, PLACEHOLDER_IMAGES.hero)}
               alt=""
-              className="aspect-video w-full object-cover transition group-hover:scale-105"
+              containerClassName="aspect-video w-full"
+              className="object-cover transition group-hover:scale-105"
+              loaderLabel="Chargement…"
             />
             <div className="p-5">
               <time className="text-xs text-muted-foreground">

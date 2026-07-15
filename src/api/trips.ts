@@ -135,7 +135,7 @@ async function fetchTripById(id: string): Promise<Trip | null> {
   return mapTrip(data, mediaMap.get(id) ?? []);
 }
 
-async function fetchTripBySlug(slug: string): Promise<Trip | null> {
+export async function fetchTripBySlug(slug: string): Promise<Trip | null> {
   const normalized = slug.trim().toLowerCase();
   const { data, error } = await getActiveSupabase()
     .from("trips")

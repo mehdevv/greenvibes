@@ -5,6 +5,7 @@ import { ArrowRight, Users, Sparkles, Mountain, Waves } from "lucide-react";
 import { LOCAL_GALLERY_PHOTOS } from "@/lib/gallery-assets";
 import { PLACEHOLDER_IMAGES, DEFAULT_OFFRES_SEARCH } from "@/lib/constants";
 import { MotionSection, Reveal, Stagger, StaggerItem } from "@/components/motion";
+import { LoadingImage } from "@/components/ui/media-loader";
 import { cn } from "@/lib/utils";
 
 const services = [
@@ -64,7 +65,13 @@ function StickyServiceCard({
         className="overflow-hidden rounded-3xl bg-card shadow-elevated"
       >
         <div className="relative aspect-[16/9] overflow-hidden md:aspect-[21/9]">
-          <img src={service.image} alt="" className="h-full w-full object-cover" />
+          <LoadingImage
+            src={service.image}
+            alt=""
+            containerClassName="h-full w-full"
+            className="object-cover"
+            loaderLabel="Chargement…"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-[var(--dark)]/85 via-[var(--dark)]/30 to-transparent" />
           <div className="absolute inset-0 flex flex-col justify-end p-6 md:p-10">
             <span className="text-sm font-medium text-leaf">{service.n}</span>
@@ -154,10 +161,12 @@ export function PicturePresentation() {
                     )}
                     onMouseEnter={() => setVibeFocus(i)}
                   >
-                    <img
+                    <LoadingImage
                       src={v.image}
                       alt={v.label}
-                      className="aspect-square w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+                      containerClassName="aspect-square w-full"
+                      className="object-cover transition duration-500 group-hover:scale-[1.03]"
+                      loaderLabel="Chargement…"
                     />
                     <div
                       className={cn(
@@ -215,10 +224,12 @@ export function PicturePresentation() {
                   )}
                   onMouseEnter={() => setFocus(i)}
                 >
-                  <img
+                  <LoadingImage
                     src={p.src}
                     alt={p.title}
-                    className="aspect-square w-full object-cover transition duration-500"
+                    containerClassName="aspect-square w-full"
+                    className="object-cover transition duration-500"
+                    loaderLabel="Chargement…"
                   />
                   <figcaption
                     className={cn(

@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useCreateReservation, useGetTrip, useTripsRealtime } from "@/api";
 import { PublicLayout } from "@/components/layout/public-layout";
 import {
@@ -18,15 +18,16 @@ import {
   HeroMediaFrame,
   HeroTitle,
 } from "@/components/public/hero-ui";
+import { ReservationPageSkeleton } from "@/components/public/reservation-page-skeleton";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { ReservationReceipt } from "@/components/public/reservation-receipt";
 import { ReservationSuccessModal } from "@/components/public/reservation-success-modal";
 import type { ReservationReceiptData } from "@/lib/reservation-receipt";
 import { formatDepartureCountdown, formatDepartureDate, isTripPublicVisible } from "@/lib/trip-dates";
 import { isValidPhone } from "@/lib/phone";
+import { preloadImage } from "@/lib/preload-images";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/reservation/$tripId")({
@@ -48,18 +49,47 @@ function ReservationPage() {
   const [waitlist, setWaitlist] = useState({ firstName: "", lastName: "", phone: "" });
   const [success, setSuccess] = useState<ReservationReceiptData | null>(null);
   const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [pageReady, setPageReady] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) {
+      setPageReady(false);
+      return;
+    }
+
+    if (!trip || !isTripPublicVisible(trip)) {
+      setPageReady(true);
+      return;
+    }
+
+    const url = trip.photoUrl?.trim();
+    if (!url) {
+      setPageReady(true);
+      return;
+    }
+
+    let cancelled = false;
+    preloadImage(url).then(() => {
+      if (!cancelled) setPageReady(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isLoading, trip]);
 
   const saveSuccess = (data: ReservationReceiptData) => {
     setSuccess(data);
     setSuccessModalOpen(true);
   };
 
-  if (isLoading) {
+  const showSkeleton =
+    !pageReady && (isLoading || !trip || Boolean(trip && isTripPublicVisible(trip)));
+
+  if (showSkeleton) {
     return (
       <PublicLayout>
-        <div className="mx-auto max-w-3xl px-6 pb-16 pt-24">
-          <Skeleton className="h-64 w-full rounded-2xl" />
-        </div>
+        <ReservationPageSkeleton />
       </PublicLayout>
     );
   }
@@ -149,13 +179,21 @@ function ReservationPage() {
 
   return (
     <PublicLayout>
-      <HeroContainer className="max-w-3xl pb-16 pt-24 md:pt-28">
+      <HeroContainer
+        className={cn(
+          "max-w-3xl pb-16 pt-24 md:pt-28",
+          "animate-in fade-in-0 duration-300",
+        )}
+      >
         <HeroMediaFrame decor={false} className="relative">
-          <img
-            src={trip.photoUrl ?? ""}
-            alt={trip.title}
-            className="block w-full object-contain"
-          />
+          {trip.photoUrl ? (
+            <img
+              src={trip.photoUrl}
+              alt={trip.title}
+              className="w-full object-contain"
+              decoding="async"
+            />
+          ) : null}
           <HeroBadge
             variant={full ? "danger" : "mint"}
             className="absolute right-4 top-4 text-sm"

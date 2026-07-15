@@ -14,15 +14,18 @@ import {
   heroBtnClasses,
 } from "@/components/public/hero-ui";
 import { Calendar } from "lucide-react";
+import { LoadingImage } from "@/components/ui/media-loader";
 import { cn } from "@/lib/utils";
 
 type TripCardProps = {
   trip: Trip;
   featured?: boolean;
   horizontal?: boolean;
+  /** Preload in carousel — no per-card loader flash */
+  eagerImage?: boolean;
 };
 
-export function TripCardV2({ trip, horizontal }: TripCardProps) {
+export function TripCardV2({ trip, horizontal, eagerImage }: TripCardProps) {
   const remaining = tripSpotsRemaining(trip.capacity, trip.spotsTaken);
   const full = remaining <= 0;
   const fillPct = trip.capacity > 0 ? ((trip.capacity - remaining) / trip.capacity) * 100 : 100;
@@ -36,14 +39,28 @@ export function TripCardV2({ trip, horizontal }: TripCardProps) {
         horizontal && "min-h-[440px]",
       )}
     >
-      <div className={cn("relative overflow-hidden", horizontal ? "aspect-[4/3]" : "aspect-[16/10]")}>
-        <img
-          src={trip.photoUrl ?? ""}
-          alt={trip.title}
-          draggable={false}
-          className="h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-105"
-          loading="lazy"
-        />
+      <div className={cn("relative overflow-hidden bg-secondary/40", horizontal ? "aspect-[4/3]" : "aspect-[16/10]")}>
+        {eagerImage ? (
+          <img
+            src={trip.photoUrl ?? ""}
+            alt={trip.title}
+            draggable={false}
+            loading="eager"
+            decoding="async"
+            fetchPriority="high"
+            className="h-full w-full object-cover transition-transform duration-[600ms] ease-out group-hover:scale-105"
+          />
+        ) : (
+          <LoadingImage
+            src={trip.photoUrl ?? ""}
+            alt={trip.title}
+            draggable={false}
+            loading="lazy"
+            containerClassName="h-full w-full"
+            className="object-cover transition-transform duration-[600ms] ease-out group-hover:scale-105"
+            loaderLabel="Chargement de l'image…"
+          />
+        )}
         <HeroBadge variant="white" className="absolute left-4 top-4">
           {trip.duration}
         </HeroBadge>
@@ -100,29 +117,16 @@ export function TripCardV2({ trip, horizontal }: TripCardProps) {
           </div>
         </div>
 
-        {trip.slug ? (
-          <Link
-            to="/r/$slug"
-            params={{ slug: trip.slug }}
-            className={cn(
-              heroBtnClasses(full ? "outline" : "accent", { full: true, size: "md" }),
-              "mt-6 py-3.5",
-            )}
-          >
-            {full ? "Liste d'attente" : "Réserver"}
-          </Link>
-        ) : (
-          <Link
-            to="/reservation/$tripId"
-            params={{ tripId: trip.id }}
-            className={cn(
-              heroBtnClasses(full ? "outline" : "accent", { full: true, size: "md" }),
-              "mt-6 py-3.5",
-            )}
-          >
-            {full ? "Liste d'attente" : "Réserver"}
-          </Link>
-        )}
+        <Link
+          to="/reservation/$tripId"
+          params={{ tripId: trip.id }}
+          className={cn(
+            heroBtnClasses(full ? "outline" : "accent", { full: true, size: "md" }),
+            "mt-6 py-3.5",
+          )}
+        >
+          {full ? "Liste d'attente" : "Réserver"}
+        </Link>
       </div>
     </HeroCard>
   );

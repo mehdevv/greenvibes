@@ -3,6 +3,7 @@ import { ArrowRight } from "lucide-react";
 import type { Offer } from "@/api/types";
 import { resolveCoverImage } from "@/lib/supabase";
 import { PLACEHOLDER_IMAGES, formatPrice } from "@/lib/constants";
+import { LoadingImage } from "@/components/ui/media-loader";
 import { cn } from "@/lib/utils";
 
 const TYPE_LABELS: Record<string, string> = {
@@ -39,10 +40,12 @@ export function TripCard({ offer, className, showNewBadge = false }: TripCardPro
       )}
     >
       <div className="relative aspect-[4/5] overflow-hidden bg-muted sm:aspect-square">
-        <img
+        <LoadingImage
           src={resolveCoverImage(offer.coverImage, PLACEHOLDER_IMAGES.gouraya)}
           alt={offer.title}
-          className="h-full w-full object-cover transition duration-500 group-hover:scale-[1.03]"
+          containerClassName="h-full w-full"
+          className="object-cover transition duration-500 group-hover:scale-[1.03]"
+          loaderLabel="Chargement de l'image…"
         />
         {offer.isFeatured && (
           <span className="absolute left-4 top-4 rounded-full bg-forest px-3 py-1 text-xs font-medium text-white">
