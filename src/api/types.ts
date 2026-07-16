@@ -10,6 +10,7 @@ export type AdminResourcePermissions = {
 export type AdminPermissions = {
   trips: AdminResourcePermissions;
   reservations: AdminResourcePermissions;
+  tripLists: AdminResourcePermissions;
 };
 
 export type OfferType = "mer" | "montagne" | "culture" | "aventure";
@@ -223,6 +224,7 @@ export interface Trip {
   active: boolean;
   archived: boolean;
   departureDate: string | null;
+  listColumns: TripSheetColumn[];
   media: TripMedia[];
   createdAt: string;
 }
@@ -236,8 +238,52 @@ export interface Reservation {
   phone: string;
   location: string;
   status: ReservationStatus;
+  sortOrder: number;
   createdAt: string;
   trip?: Trip | null;
+}
+
+export interface UpdateReservationInput {
+  id: string;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  location?: string;
+  sortOrder?: number;
+}
+
+export interface TripSheetColumn {
+  id: string;
+  label: string;
+}
+
+export interface TripSheet {
+  id: string;
+  tripId: string;
+  name: string;
+  isDefault: boolean;
+  sortOrder: number;
+  createdAt: string;
+}
+
+export interface TripSheetRow {
+  id: string;
+  sheetId: string;
+  sortOrder: number;
+  cells: Record<string, string>;
+  reservationId: string | null;
+  createdAt: string;
+}
+
+export interface CreateTripSheetInput {
+  tripId: string;
+  name: string;
+}
+
+export interface UpdateTripSheetInput {
+  id: string;
+  name?: string;
+  sortOrder?: number;
 }
 
 export interface CreateReservationInput {

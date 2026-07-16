@@ -11,7 +11,7 @@ import {
 import { AdminBreadcrumbs } from "@/components/admin/admin-breadcrumbs";
 import { TripFormPanel } from "@/components/admin/trip-form-panel";
 import { ReservationQuickForm } from "@/components/admin/reservation-quick-form";
-import { TripReservationsSheet } from "@/components/admin/trip-reservations-sheet";
+import { TripSheetsManager } from "@/components/admin/trip-sheets-manager";
 import { TripShareLink } from "@/components/admin/trip-share-link";
 import { useAuth } from "@/lib/auth";
 import { useWorkspacePaths } from "@/lib/workspace-paths";
@@ -171,7 +171,7 @@ export function TripDetailPage({ tripId }: { tripId: string }) {
             {can("reservations", "create") && <ReservationQuickForm trip={trip} />}
             <Card className="flex min-h-0 flex-1 flex-col">
               <CardContent className="flex min-h-0 flex-1 flex-col p-4 md:p-6">
-                <TripReservationsSheet trip={trip} />
+                <TripSheetsManager trip={trip} />
               </CardContent>
             </Card>
           </div>

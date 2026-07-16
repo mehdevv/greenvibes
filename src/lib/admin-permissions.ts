@@ -6,6 +6,7 @@ export type AdminAction = "read" | "create" | "update" | "delete";
 export const ADMIN_RESOURCES: { id: AdminResource; label: string }[] = [
   { id: "trips", label: "Offres / voyages" },
   { id: "reservations", label: "Réservations" },
+  { id: "tripLists", label: "Listes / feuilles" },
 ];
 
 export const ADMIN_ACTIONS: { id: AdminAction; label: string }[] = [
@@ -19,6 +20,7 @@ export function emptyPermissions(): AdminPermissions {
   return {
     trips: { read: false, create: false, update: false, delete: false },
     reservations: { read: false, create: false, update: false, delete: false },
+    tripLists: { read: false, create: false, update: false, delete: false },
   };
 }
 
@@ -26,6 +28,7 @@ export function fullPermissions(): AdminPermissions {
   return {
     trips: { read: true, create: true, update: true, delete: true },
     reservations: { read: true, create: true, update: true, delete: true },
+    tripLists: { read: true, create: true, update: true, delete: true },
   };
 }
 
@@ -35,10 +38,12 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<AdminRole, AdminPermissions> = {
   commercial: {
     trips: { read: true, create: false, update: false, delete: false },
     reservations: { read: true, create: true, update: true, delete: false },
+    tripLists: { read: true, create: false, update: false, delete: false },
   },
   reader: {
     trips: { read: true, create: false, update: false, delete: false },
     reservations: { read: true, create: false, update: false, delete: false },
+    tripLists: { read: true, create: false, update: false, delete: false },
   },
   worker: emptyPermissions(),
 };
@@ -46,6 +51,7 @@ export const ROLE_DEFAULT_PERMISSIONS: Record<AdminRole, AdminPermissions> = {
 export const DEFAULT_WORKER_PERMISSIONS: AdminPermissions = {
   trips: { read: true, create: false, update: false, delete: false },
   reservations: { read: true, create: true, update: true, delete: false },
+  tripLists: { read: true, create: false, update: false, delete: false },
 };
 
 export function normalizePermissions(

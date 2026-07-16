@@ -13,6 +13,7 @@ export * from "./contact";
 export * from "./analytics";
 export * from "./trips";
 export * from "./reservations";
+export * from "./trip-sheets";
 export * from "./site-images";
 export * from "./site-content";
 export * from "./site-hero-videos";

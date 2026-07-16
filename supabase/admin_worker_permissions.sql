@@ -54,6 +54,7 @@ BEGIN
   IF v_role = 'commercial' THEN
     IF p_action = 'read' THEN RETURN true; END IF;
     IF p_resource = 'trips' THEN RETURN false; END IF;
+    IF p_resource = 'tripLists' AND p_action <> 'read' THEN RETURN false; END IF;
     IF p_action = 'delete' THEN RETURN false; END IF;
     RETURN true;
   END IF;
@@ -75,7 +76,10 @@ AS $$
     OR public.admin_has_permission('trips', 'delete')
     OR public.admin_has_permission('reservations', 'create')
     OR public.admin_has_permission('reservations', 'update')
-    OR public.admin_has_permission('reservations', 'delete');
+    OR public.admin_has_permission('reservations', 'delete')
+    OR public.admin_has_permission('tripLists', 'create')
+    OR public.admin_has_permission('tripLists', 'update')
+    OR public.admin_has_permission('tripLists', 'delete');
 $$;
 
 -- Trips: split write policy
@@ -99,6 +103,7 @@ CREATE POLICY trips_admin_delete ON public.trips
 
 -- Reservations: split admin policy
 DROP POLICY IF EXISTS reservations_admin_all ON public.reservations;
+DROP POLICY IF EXISTS reservations_admin_select ON public.reservations;
 DROP POLICY IF EXISTS reservations_admin_insert ON public.reservations;
 DROP POLICY IF EXISTS reservations_admin_update ON public.reservations;
 DROP POLICY IF EXISTS reservations_admin_delete ON public.reservations;

@@ -4,7 +4,7 @@ import type { Trip, TripMedia, TripMediaType } from "./types";
 import { DEMO_TRIPS } from "@/lib/demo-trips";
 import { isTripPublicVisible } from "@/lib/trip-dates";
 import { PLACEHOLDER_IMAGES } from "@/lib/constants";
-import { resolveTripSlug } from "@/lib/trip-slug";
+import { parseListColumns } from "@/lib/trip-list-columns";
 import { getPublicImageUrl, getActiveSupabase } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
 
@@ -51,6 +51,7 @@ export function mapTrip(row: Record<string, unknown>, media: TripMedia[] = []): 
     active: Boolean(row.active),
     archived: Boolean(row.archived ?? false),
     departureDate: row.departure_date ? String(row.departure_date) : null,
+    listColumns: parseListColumns(row.list_columns),
     media,
     createdAt: String(row.created_at),
   };

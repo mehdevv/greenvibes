@@ -4,7 +4,28 @@ import { corsHeaders, jsonResponse } from "../_shared/cors.ts";
 type Permissions = {
   trips: { read: boolean; create: boolean; update: boolean; delete: boolean };
   reservations: { read: boolean; create: boolean; update: boolean; delete: boolean };
+  tripLists: { read: boolean; create: boolean; update: boolean; delete: boolean };
 };
+
+function sanitizePermissions(input: Partial<Permissions> | undefined): Permissions {
+  const base: Permissions = {
+    trips: { read: false, create: false, update: false, delete: false },
+    reservations: { read: false, create: false, update: false, delete: false },
+    tripLists: { read: false, create: false, update: false, delete: false },
+  };
+  if (!input) return base;
+  for (const resource of ["trips", "reservations", "tripLists"] as const) {
+    const src = input[resource];
+    if (!src) continue;
+    base[resource] = {
+      read: Boolean(src.read),
+      create: Boolean(src.create),
+      update: Boolean(src.update),
+      delete: Boolean(src.delete),
+    };
+  }
+  return base;
+}
 
 function getBearerToken(req: Request) {
   const auth = req.headers.get("Authorization") ?? "";
@@ -41,25 +62,6 @@ async function assertSuperAdmin(req: Request) {
   }
 
   return { service, callerId: authData.user.id };
-}
-
-function sanitizePermissions(input: Permissions | undefined): Permissions {
-  const base = {
-    trips: { read: false, create: false, update: false, delete: false },
-    reservations: { read: false, create: false, update: false, delete: false },
-  };
-  if (!input) return base;
-  for (const resource of ["trips", "reservations"] as const) {
-    const src = input[resource];
-    if (!src) continue;
-    base[resource] = {
-      read: Boolean(src.read),
-      create: Boolean(src.create),
-      update: Boolean(src.update),
-      delete: Boolean(src.delete),
-    };
-  }
-  return base;
 }
 
 Deno.serve(async (req) => {

@@ -1,8 +1,15 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
-import type { CreateReservationInput, CreateReservationResult, Reservation, ReservationStatus, Trip } from "./types";
+import type { CreateReservationInput, CreateReservationResult, Reservation, ReservationStatus, Trip, UpdateReservationInput } from "./types";
 import { invokeFunction, getActiveSupabase } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
+import { parseListColumns } from "@/lib/trip-list-columns";
+import {
+  syncSpotsForStatusChange,
+  updateReservationFieldsById,
+  updateReservationStatusById,
+} from "./reservation-mutations";
+import { syncReservationToSheetRow } from "./reservation-sheet-sync";
 
 async function createReservationRpc(
   input: CreateReservationInput,
@@ -72,6 +79,7 @@ function mapTripSummary(row: Record<string, unknown> | null | undefined): Trip |
     slug: row.slug ? String(row.slug) : null,
     archived: Boolean(row.archived ?? false),
     departureDate: row.departure_date ? String(row.departure_date) : null,
+    listColumns: parseListColumns(row.list_columns),
     media: [],
     createdAt: String(row.created_at ?? ""),
   };
@@ -88,6 +96,7 @@ function mapReservation(row: Record<string, unknown>): Reservation {
     phone: String(row.phone),
     location: String(row.location),
     status: row.status as ReservationStatus,
+    sortOrder: Number(row.sort_order ?? 0),
     createdAt: String(row.created_at),
     trip: mapTripSummary(trips),
   };
@@ -100,19 +109,32 @@ export function useCreateReservation() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: async (input: CreateReservationInput): Promise<CreateReservationResult> => {
+      let result: CreateReservationResult;
       try {
-        return await createReservationRpc(input);
+        result = await createReservationRpc(input);
       } catch (rpcError) {
         try {
-          return await createReservationEdge(input);
+          result = await createReservationEdge(input);
         } catch {
           throw rpcError instanceof Error ? rpcError : new Error("Réservation impossible");
         }
       }
+
+      const { data, error } = await getActiveSupabase()
+        .from("reservations")
+        .select(RESERVATION_SELECT)
+        .eq("id", result.reservationId)
+        .single();
+      if (!error && data) {
+        const reservation = mapReservation(data);
+        await syncReservationToSheetRow(reservation);
+      }
+      return result;
     },
     onSuccess: () => {
       qc.invalidateQueries({ queryKey: ["trips"] });
       qc.invalidateQueries({ queryKey: ["reservations"] });
+      qc.invalidateQueries({ queryKey: ["trip-sheet-rows"] });
       qc.invalidateQueries({ queryKey: ["analytics"] });
     },
   });
@@ -126,7 +148,8 @@ export function useListReservations(params?: { search?: string; status?: string;
       let query = getActiveSupabase()
         .from("reservations")
         .select(RESERVATION_SELECT)
-        .order("created_at", { ascending: false });
+        .order("sort_order", { ascending: true })
+        .order("created_at", { ascending: true });
 
       if (params?.tripId) query = query.eq("trip_id", params.tripId);
       if (params?.status) query = query.eq("status", params.status);
@@ -148,71 +171,16 @@ export function useListReservationsByTrip(tripId: string) {
   return useListReservations({ tripId });
 }
 
-async function syncSpotsForStatusChange(
-  tripId: string,
-  oldStatus: ReservationStatus,
-  newStatus: ReservationStatus,
-) {
-  const wasConfirmed = oldStatus === "confirmed";
-  const willConfirm = newStatus === "confirmed";
-
-  if (wasConfirmed === willConfirm) return;
-
-  const { data: trip, error } = await getActiveSupabase()
-    .from("trips")
-    .select("capacity, spots_taken")
-    .eq("id", tripId)
-    .single();
-  if (error) throw new Error(formatPostgrestError(error));
-
-  const taken = Number(trip.spots_taken);
-  const capacity = Number(trip.capacity);
-
-  if (!wasConfirmed && willConfirm) {
-    if (taken >= capacity) {
-      throw new Error("Complet — aucune place disponible pour confirmer cette réservation.");
-    }
-    const { error: updateError } = await getActiveSupabase()
-      .from("trips")
-      .update({ spots_taken: taken + 1 })
-      .eq("id", tripId);
-    if (updateError) throw new Error(formatPostgrestError(updateError));
-    return;
-  }
-
-  const { error: updateError } = await getActiveSupabase()
-    .from("trips")
-    .update({ spots_taken: Math.max(0, taken - 1) })
-    .eq("id", tripId);
-  if (updateError) throw new Error(formatPostgrestError(updateError));
-}
-
-async function updateReservationStatusById(id: string, status: ReservationStatus): Promise<Reservation> {
-  const { data: existing, error: fetchError } = await getActiveSupabase()
-    .from("reservations")
-    .select("id, status, trip_id")
-    .eq("id", id)
-    .single();
-  if (fetchError) throw new Error(formatPostgrestError(fetchError));
-
-  const oldStatus = existing.status as ReservationStatus;
-  if (oldStatus !== status) {
-    await syncSpotsForStatusChange(existing.trip_id, oldStatus, status);
-  }
-
-  const { data, error } = await getActiveSupabase()
-    .from("reservations")
-    .update({ status })
-    .eq("id", id)
-    .select(RESERVATION_SELECT)
-    .single();
-  if (error) throw new Error(formatPostgrestError(error));
-  return mapReservation(data);
+async function updateReservationStatusByIdLocal(id: string, status: ReservationStatus) {
+  const reservation = await updateReservationStatusById(id, status);
+  await syncReservationToSheetRow(reservation);
+  return reservation;
 }
 
 function invalidateReservationQueries(qc: ReturnType<typeof useQueryClient>) {
   qc.invalidateQueries({ queryKey: ["reservations"] });
   qc.invalidateQueries({ queryKey: ["trips"] });
+  qc.invalidateQueries({ queryKey: ["trip-sheet-rows"] });
   qc.invalidateQueries({ queryKey: ["analytics"] });
 }
 
@@ -220,7 +188,7 @@ export function useUpdateReservationStatus() {
   const qc = useQueryClient();
   return useMutation({
     mutationFn: ({ id, status }: { id: string; status: ReservationStatus }) =>
-      updateReservationStatusById(id, status),
+      updateReservationStatusByIdLocal(id, status),
     onSuccess: () => invalidateReservationQueries(qc),
   });
 }
@@ -228,7 +196,41 @@ export function useUpdateReservationStatus() {
 export function useCancelReservation() {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: (id: string) => updateReservationStatusById(id, "cancelled"),
+    mutationFn: (id: string) => updateReservationStatusByIdLocal(id, "cancelled"),
+    onSuccess: () => invalidateReservationQueries(qc),
+  });
+}
+
+export function useUpdateReservation() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (input: UpdateReservationInput): Promise<Reservation> => {
+      const patch: Record<string, unknown> = {};
+      if (input.firstName !== undefined) patch.first_name = input.firstName.trim();
+      if (input.lastName !== undefined) patch.last_name = input.lastName.trim();
+      if (input.phone !== undefined) patch.phone = input.phone.trim();
+      if (input.location !== undefined) patch.location = input.location.trim();
+      if (input.sortOrder !== undefined) patch.sort_order = input.sortOrder;
+
+      const reservation = await updateReservationFieldsById(input.id, patch);
+      await syncReservationToSheetRow(reservation);
+      return reservation;
+    },
+    onSuccess: () => invalidateReservationQueries(qc),
+  });
+}
+
+export function useReorderReservations() {
+  const qc = useQueryClient();
+  return useMutation({
+    mutationFn: async (items: { id: string; sortOrder: number }[]) => {
+      const updates = items.map(({ id, sortOrder }) =>
+        getActiveSupabase().from("reservations").update({ sort_order: sortOrder }).eq("id", id),
+      );
+      const results = await Promise.all(updates);
+      const failed = results.find((r) => r.error);
+      if (failed?.error) throw new Error(formatPostgrestError(failed.error));
+    },
     onSuccess: () => invalidateReservationQueries(qc),
   });
 }

@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useListAllTripsAdmin, useReservationsRealtime, useTripsRealtime } from "@/api";
 import type { Trip } from "@/api/types";
 import { ReservationQuickForm } from "@/components/admin/reservation-quick-form";
-import { TripReservationsSheet } from "@/components/admin/trip-reservations-sheet";
+import { TripSheetsManager } from "@/components/admin/trip-sheets-manager";
 import { useAuth } from "@/lib/auth";
 import { useWorkspacePaths } from "@/lib/workspace-paths";
 import { tripSpotsRemaining } from "@/lib/availability";
@@ -197,7 +197,7 @@ export function InscriptionsPage({ tripIdFromUrl }: { tripIdFromUrl?: string }) 
           {selectedTrip ? (
             <div className="flex min-h-[480px] flex-1 flex-col rounded-xl border border-border bg-card p-4 md:p-5">
               <h3 className="mb-3 font-semibold text-foreground">Participants &amp; statuts</h3>
-              <TripReservationsSheet trip={selectedTrip} />
+              <TripSheetsManager trip={selectedTrip} />
             </div>
           ) : (
             <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-border p-12 text-sm text-muted-foreground">

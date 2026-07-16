@@ -1,5 +1,6 @@
 import type { Trip } from "@/api/types";
 import { PLACEHOLDER_IMAGES } from "@/lib/constants";
+import { DEFAULT_LIST_COLUMNS } from "@/lib/trip-list-columns";
 
 function futureDate(daysFromNow: number) {
   const d = new Date();
@@ -25,6 +26,7 @@ export const DEMO_TRIPS: Trip[] = [
     active: true,
     archived: false,
     departureDate: futureDate(12),
+    listColumns: DEFAULT_LIST_COLUMNS,
     media: [],
     createdAt: new Date().toISOString(),
   },
@@ -44,6 +46,7 @@ export const DEMO_TRIPS: Trip[] = [
     archived: false,
     departureDate: futureDate(21),
     media: [],
+    listColumns: DEFAULT_LIST_COLUMNS,
     createdAt: new Date().toISOString(),
   },
   {
@@ -62,6 +65,7 @@ export const DEMO_TRIPS: Trip[] = [
     archived: false,
     departureDate: futureDate(7),
     media: [],
+    listColumns: DEFAULT_LIST_COLUMNS,
     createdAt: new Date().toISOString(),
   },
   {
@@ -80,6 +84,7 @@ export const DEMO_TRIPS: Trip[] = [
     archived: false,
     departureDate: futureDate(3),
     media: [],
+    listColumns: DEFAULT_LIST_COLUMNS,
     createdAt: new Date().toISOString(),
   },
 ];
