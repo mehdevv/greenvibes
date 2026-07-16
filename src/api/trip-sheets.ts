@@ -362,4 +362,15 @@ export function useTripSheetsRealtime(tripId: string) {
   }, [tripId, qc]);
 }
 
+export async function fetchTripSheetRows(sheetId: string): Promise<TripSheetRow[]> {
+  const { data, error } = await getActiveSupabase()
+    .from("trip_sheet_rows")
+    .select("*")
+    .eq("sheet_id", sheetId)
+    .order("sort_order", { ascending: true })
+    .order("created_at", { ascending: true });
+  if (error) throw new Error(formatPostgrestError(error));
+  return (data ?? []).map((r) => mapRow(r));
+}
+
 export { parseListColumns };

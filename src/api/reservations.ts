@@ -140,18 +140,22 @@ export function useCreateReservation() {
   });
 }
 
-export function useListReservations(params?: { search?: string; status?: string; tripId?: string }) {
+export function useListReservations(
+  params?: { search?: string; status?: string; tripId?: string },
+  options?: { enabled?: boolean },
+) {
   return useQuery({
     queryKey: ["reservations", params],
-    enabled: params?.tripId !== "",
+    enabled: (options?.enabled ?? true) && params?.tripId !== "",
     queryFn: async (): Promise<Reservation[]> => {
       let query = getActiveSupabase()
         .from("reservations")
         .select(RESERVATION_SELECT)
-        .order("sort_order", { ascending: true })
         .order("created_at", { ascending: true });
 
-      if (params?.tripId) query = query.eq("trip_id", params.tripId);
+      if (params?.tripId) {
+        query = query.eq("trip_id", params.tripId).order("sort_order", { ascending: true });
+      }
       if (params?.status) query = query.eq("status", params.status);
       if (params?.search) {
         const q = params.search.trim();
