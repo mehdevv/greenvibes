@@ -50,7 +50,6 @@ function EmployeeMagicEntryForm() {
           await supabaseEmployee.auth.verifyOtp({
             type: otpType,
             token_hash: result.token_hash,
-            email: result.email,
           })
         ).error;
 
@@ -59,7 +58,6 @@ function EmployeeMagicEntryForm() {
             await supabaseEmployee.auth.verifyOtp({
               type: "email",
               token_hash: result.token_hash,
-              email: result.email,
             })
           ).error;
         }
