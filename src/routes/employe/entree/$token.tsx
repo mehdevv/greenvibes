@@ -39,11 +39,6 @@ function EmployeeMagicEntryForm() {
       try {
         const result = await redeemEmployeeMagicLink(token);
 
-        if (result.action_link) {
-          window.location.replace(result.action_link);
-          return;
-        }
-
         if (!result.token_hash) {
           throw new Error("Connexion impossible");
         }

@@ -23,11 +23,34 @@ function randomToken(): string {
   return btoa(binary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/g, "");
 }
 
-function getSiteOrigin(req: Request): string {
+function getSiteOrigin(req: Request, bodyOrigin?: unknown): string {
+  const fromBody = typeof bodyOrigin === "string" ? bodyOrigin.trim() : "";
+  if (fromBody) {
+    try {
+      const parsed = new URL(fromBody);
+      if (parsed.protocol === "http:" || parsed.protocol === "https:") {
+        return parsed.origin;
+      }
+    } catch {
+      // ignore invalid body origin
+    }
+  }
+
   const fromEnv = Deno.env.get("SITE_URL")?.trim();
   if (fromEnv) return fromEnv.replace(/\/$/, "");
+
   const origin = req.headers.get("origin")?.trim();
   if (origin) return origin.replace(/\/$/, "");
+
+  const referer = req.headers.get("referer")?.trim();
+  if (referer) {
+    try {
+      return new URL(referer).origin;
+    } catch {
+      // ignore
+    }
+  }
+
   return "https://greenvibes-ten.vercel.app";
 }
 
@@ -116,7 +139,7 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: insertError.message }, 400);
       }
 
-      const loginUrl = `${getSiteOrigin(req)}/employe/entree/${rawToken}`;
+      const loginUrl = `${getSiteOrigin(req, body.siteOrigin)}/employe/entree/${rawToken}`;
 
       return jsonResponse({
         ok: true,
@@ -159,7 +182,8 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: "Compte employé invalide" }, 400);
       }
 
-      const redirectTo = `${getSiteOrigin(req)}/employe/inscriptions`;
+      const siteOrigin = getSiteOrigin(req, body.siteOrigin);
+      const redirectTo = `${siteOrigin}/employe/inscriptions`;
       const { data: linkData, error: linkError } = await service.auth.admin.generateLink({
         type: "magiclink",
         email: worker.email,
@@ -170,9 +194,8 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: linkError?.message ?? "Connexion impossible" }, 500);
       }
 
-      const actionLink = linkData.properties.action_link;
       const tokenHashOtp = linkData.properties.hashed_token;
-      if (!actionLink && !tokenHashOtp) {
+      if (!tokenHashOtp) {
         return jsonResponse({ error: "Connexion impossible" }, 500);
       }
 
@@ -190,7 +213,6 @@ Deno.serve(async (req) => {
 
       return jsonResponse({
         ok: true,
-        action_link: actionLink,
         token_hash: tokenHashOtp,
         email: worker.email,
         verification_type: linkData.properties.verification_type ?? "magiclink",

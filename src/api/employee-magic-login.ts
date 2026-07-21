@@ -11,9 +11,10 @@ export type EmployeeMagicLinkResult = {
 export function useCreateEmployeeMagicLink() {
   return useMutation({
     mutationFn: async (workerId: string): Promise<EmployeeMagicLinkResult> => {
+      const siteOrigin = typeof window !== "undefined" ? window.location.origin : undefined;
       return invokeFunction<EmployeeMagicLinkResult>(
         "employee-magic-login",
-        { action: "create", workerId },
+        { action: "create", workerId, siteOrigin },
         supabaseAdmin,
       );
     },
@@ -22,16 +23,16 @@ export function useCreateEmployeeMagicLink() {
 
 export type RedeemEmployeeMagicLinkResult = {
   ok: true;
-  action_link?: string;
-  token_hash?: string;
+  token_hash: string;
   email: string;
   verification_type?: string;
 };
 
 export async function redeemEmployeeMagicLink(token: string): Promise<RedeemEmployeeMagicLinkResult> {
   const { supabaseEmployee } = await import("@/lib/supabase");
+  const siteOrigin = typeof window !== "undefined" ? window.location.origin : undefined;
   const { data, error } = await supabaseEmployee.functions.invoke("employee-magic-login", {
-    body: { action: "redeem", token },
+    body: { action: "redeem", token, siteOrigin },
   });
   if (error) throw new Error(error.message);
   if (data?.error) throw new Error(String(data.error));
