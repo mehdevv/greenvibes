@@ -20,6 +20,8 @@ export function TripsGrid() {
     preloadImages(trips.map((t) => t.photoUrl));
   }, [trips]);
 
+  if (!isLoading && !(trips?.length ?? 0)) return null;
+
   return (
     <section
       id="voyages"
@@ -45,7 +47,7 @@ export function TripsGrid() {
             </HorizontalScrollItem>
           ))}
         </HorizontalScroll>
-      ) : (trips?.length ?? 0) > 0 ? (
+      ) : (
         <div className="mt-10">
           <HorizontalScroll aria-label="Liste des voyages" showDots={false}>
             {(trips ?? []).map((trip) => (
@@ -59,10 +61,6 @@ export function TripsGrid() {
             <ChevronRight className="h-4 w-4" />
           </p>
         </div>
-      ) : (
-        <HeroContainer className="mt-12 text-center text-muted-foreground">
-          Aucune sortie pour le moment — reviens bientôt ou contacte-nous directement.
-        </HeroContainer>
       )}
     </section>
   );

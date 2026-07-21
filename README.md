@@ -113,4 +113,4 @@ Find your keys in **Supabase Dashboard → Project Settings → API** (`anon` / 
 
 ## Demo data
 
-If migration `006` is not applied yet, the homepage uses bundled `DEMO_TRIPS` so you can preview the UI immediately.
+Run `supabase/seed_trips.sql` in the SQL editor if you want sample trips in a fresh project. The public homepage only shows trips created in the admin (no bundled demo offers).

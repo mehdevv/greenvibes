@@ -1,20 +1,11 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { Trip, TripMedia, TripMediaType } from "./types";
-import { DEMO_TRIPS } from "@/lib/demo-trips";
 import { isTripPublicVisible } from "@/lib/trip-dates";
 import { PLACEHOLDER_IMAGES } from "@/lib/constants";
 import { parseListColumns } from "@/lib/trip-list-columns";
 import { getPublicImageUrl, getActiveSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
-
-const DEMO_PHOTO_BY_ID: Record<string, string> = {
-  "a1000000-0000-4000-8000-000000000001": PLACEHOLDER_IMAGES.tichy,
-  "a1000000-0000-4000-8000-000000000002": PLACEHOLDER_IMAGES.gouraya,
-  "a1000000-0000-4000-8000-000000000003": PLACEHOLDER_IMAGES.kherrata,
-  "a1000000-0000-4000-8000-000000000004": PLACEHOLDER_IMAGES.corniche,
-  "a1000000-0000-4000-8000-000000000005": PLACEHOLDER_IMAGES.gouraya,
-};
 
 function mapTripMedia(row: Record<string, unknown>): TripMedia {
   return {
@@ -33,7 +24,6 @@ export function mapTrip(row: Record<string, unknown>, media: TripMedia[] = []): 
   const photoUrl =
     getPublicImageUrl(rawPhoto) ||
     coverFromMedia ||
-    DEMO_PHOTO_BY_ID[id] ||
     PLACEHOLDER_IMAGES.hero;
 
   return {
@@ -90,7 +80,7 @@ async function archiveExpiredTrips() {
 }
 
 async function fetchActiveTrips(): Promise<Trip[]> {
-  if (!isSupabaseConfigured) return DEMO_TRIPS.filter(isTripPublicVisible);
+  if (!isSupabaseConfigured) return [];
 
   await archiveExpiredTrips();
 
@@ -111,13 +101,11 @@ async function fetchActiveTrips(): Promise<Trip[]> {
   }
 
   if (error) {
-    if (error.code === "42P01" || error.message.includes("trips")) {
-      return DEMO_TRIPS.filter(isTripPublicVisible);
-    }
+    if (error.code === "42P01" || error.message.includes("trips")) return [];
     throw new Error(formatPostgrestError(error));
   }
 
-  if (!data?.length) return DEMO_TRIPS.filter(isTripPublicVisible);
+  if (!data?.length) return [];
 
   const mediaMap = await fetchTripMediaMap(data.map((r) => String(r.id)));
   return data
@@ -126,23 +114,21 @@ async function fetchActiveTrips(): Promise<Trip[]> {
 }
 
 async function fetchTripById(id: string): Promise<Trip | null> {
-  if (!isSupabaseConfigured) return DEMO_TRIPS.find((t) => t.id === id) ?? null;
+  if (!isSupabaseConfigured) return null;
 
   const { data, error } = await getActiveSupabase().from("trips").select("*").eq("id", id).maybeSingle();
   if (error) {
-    if (error.code === "42P01") {
-      return DEMO_TRIPS.find((t) => t.id === id) ?? null;
-    }
+    if (error.code === "42P01") return null;
     throw new Error(formatPostgrestError(error));
   }
-  if (!data) return DEMO_TRIPS.find((t) => t.id === id) ?? null;
+  if (!data) return null;
   const mediaMap = await fetchTripMediaMap([id]);
   return mapTrip(data, mediaMap.get(id) ?? []);
 }
 
 export async function fetchTripBySlug(slug: string): Promise<Trip | null> {
   const normalized = slug.trim().toLowerCase();
-  if (!isSupabaseConfigured) return DEMO_TRIPS.find((t) => t.slug === normalized) ?? null;
+  if (!isSupabaseConfigured) return null;
 
   const { data, error } = await getActiveSupabase()
     .from("trips")
@@ -151,12 +137,10 @@ export async function fetchTripBySlug(slug: string): Promise<Trip | null> {
     .maybeSingle();
 
   if (error) {
-    if (error.code === "42P01" || error.code === "42703") {
-      return DEMO_TRIPS.find((t) => t.slug === normalized) ?? null;
-    }
+    if (error.code === "42P01" || error.code === "42703") return null;
     throw new Error(formatPostgrestError(error));
   }
-  if (!data) return DEMO_TRIPS.find((t) => t.slug === normalized) ?? null;
+  if (!data) return null;
   const tripId = String(data.id);
   const mediaMap = await fetchTripMediaMap([tripId]);
   return mapTrip(data, mediaMap.get(tripId) ?? []);
