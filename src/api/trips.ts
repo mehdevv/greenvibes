@@ -4,6 +4,7 @@ import type { Trip, TripMedia, TripMediaType } from "./types";
 import { isTripPublicVisible } from "@/lib/trip-dates";
 import { PLACEHOLDER_IMAGES } from "@/lib/constants";
 import { parseListColumns } from "@/lib/trip-list-columns";
+import { resolveTripSlug } from "@/lib/trip-slug";
 import { getPublicImageUrl, getActiveSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
 
