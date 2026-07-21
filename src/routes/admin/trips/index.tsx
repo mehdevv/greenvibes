@@ -1,45 +1,29 @@
-import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { useListAllTripsAdmin, useListReservations, useReservationsRealtime, useDeleteTrip } from "@/api";
 import type { Trip } from "@/api/types";
 import { TripFormDialog } from "@/components/admin/trip-form-dialog";
-import { TripShareLink } from "@/components/admin/trip-share-link";
+import { TripListCard } from "@/components/admin/trip-list-card";
 import { useAuth } from "@/lib/auth";
 import { useWorkspacePaths } from "@/lib/workspace-paths";
-import {
-  tripAvailabilityBarColor,
-  tripAvailabilityLabel,
-  tripSpotsRemaining,
-} from "@/lib/availability";
-import { formatDepartureDate } from "@/lib/trip-dates";
-import { formatPrice } from "@/lib/constants";
+import { tripSpotsRemaining } from "@/lib/availability";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { Calendar, ChevronRight, Plus, Search, Trash2, UserPlus } from "lucide-react";
+import { Armchair, Package, Plus, Search, Sparkles } from "lucide-react";
 import { toast } from "sonner";
 
 type Filter = "all" | "active" | "inactive" | "archived" | "full" | "available";
 type CreatedFilter = "all" | "7d" | "30d" | "90d";
-type SortOrder = "newest" | "oldest";
-
-function formatCreatedDate(iso: string) {
-  try {
-    return new Intl.DateTimeFormat("fr-DZ", { dateStyle: "medium" }).format(new Date(iso));
-  } catch {
-    return iso;
-  }
-}
+type SortOrder = "newest" | "oldest" | "departure";
 
 function matchesCreatedFilter(createdAt: string, filter: CreatedFilter) {
   if (filter === "all") return true;
@@ -66,9 +50,9 @@ export function TripsListPage() {
   useReservationsRealtime();
 
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<Filter>("all");
+  const [filter, setFilter] = useState<Filter>("active");
   const [createdFilter, setCreatedFilter] = useState<CreatedFilter>("all");
-  const [sortOrder, setSortOrder] = useState<SortOrder>("newest");
+  const [sortOrder, setSortOrder] = useState<SortOrder>("departure");
   const [dialogOpen, setDialogOpen] = useState(false);
 
   const reservationCounts = useMemo(() => {
@@ -79,6 +63,17 @@ export function TripsListPage() {
     }
     return map;
   }, [allReservations]);
+
+  const summary = useMemo(() => {
+    const list = trips ?? [];
+    return {
+      total: list.length,
+      active: list.filter((t) => t.active && !t.archived).length,
+      available: list.filter((t) => tripSpotsRemaining(t.capacity, t.spotsTaken) > 0 && t.active && !t.archived).length,
+      full: list.filter((t) => tripSpotsRemaining(t.capacity, t.spotsTaken) <= 0 && !t.archived).length,
+      archived: list.filter((t) => t.archived).length,
+    };
+  }, [trips]);
 
   const filteredTrips = useMemo(() => {
     let list = trips ?? [];
@@ -111,26 +106,24 @@ export function TripsListPage() {
     }
     list = list.filter((t) => matchesCreatedFilter(t.createdAt, createdFilter));
     list = [...list].sort((a, b) => {
+      if (sortOrder === "departure") {
+        const aDate = a.departureDate ? new Date(a.departureDate).getTime() : Number.MAX_SAFE_INTEGER;
+        const bDate = b.departureDate ? new Date(b.departureDate).getTime() : Number.MAX_SAFE_INTEGER;
+        if (aDate !== bDate) return aDate - bDate;
+      }
       const diff = new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-      return sortOrder === "newest" ? diff : -diff;
+      return sortOrder === "oldest" ? -diff : diff;
     });
     return list;
   }, [trips, search, filter, createdFilter, sortOrder]);
 
-  const filters: { id: Filter; label: string }[] = [
-    { id: "all", label: "Toutes" },
-    { id: "active", label: "Actives" },
+  const primaryFilters: { id: Filter; label: string; count?: number }[] = [
+    { id: "active", label: "Actives", count: summary.active },
+    { id: "all", label: "Toutes", count: summary.total },
     { id: "available", label: "Places libres" },
-    { id: "full", label: "Complètes" },
-    { id: "archived", label: "Archivées" },
+    { id: "full", label: "Complètes", count: summary.full },
+    { id: "archived", label: "Archivées", count: summary.archived },
     { id: "inactive", label: "Inactives" },
-  ];
-
-  const createdFilters: { id: CreatedFilter; label: string }[] = [
-    { id: "all", label: "Toutes dates" },
-    { id: "7d", label: "7 jours" },
-    { id: "30d", label: "30 jours" },
-    { id: "90d", label: "90 jours" },
   ];
 
   const handleDelete = async (trip: Trip, e: React.MouseEvent) => {
@@ -148,304 +141,141 @@ export function TripsListPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-start justify-between gap-4">
+    <div className="space-y-8 pb-4">
+      <header className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
         <div>
-          <h1 className="font-display text-2xl font-bold text-foreground md:text-3xl">Offres &amp; voyages</h1>
-          <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            Gérez vos offres et participants — statistiques sur le tableau de bord.
+          <h1 className="font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+            Voyages &amp; offres
+          </h1>
+          <p className="mt-1 max-w-xl text-sm text-muted-foreground md:text-base">
+            Toutes vos sorties au même endroit — statut, places, lien court et actions rapides.
           </p>
         </div>
         {can("trips", "create") && (
-          <Button className="gap-2 rounded-full" onClick={() => setDialogOpen(true)}>
+          <Button className="h-11 shrink-0 gap-2 rounded-full px-5 sm:h-10" onClick={() => setDialogOpen(true)}>
             <Plus className="h-4 w-4" />
             Nouvelle offre
           </Button>
         )}
+      </header>
+
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <SummaryCard label="Total offres" value={summary.total} icon={Package} />
+        <SummaryCard label="Actives" value={summary.active} icon={Sparkles} accent="forest" />
+        <SummaryCard label="Avec places libres" value={summary.available} icon={Armchair} accent="success" />
+        <SummaryCard label="Complètes" value={summary.full} icon={Armchair} accent={summary.full > 0 ? "warning" : "muted"} />
       </div>
 
-      <div className="flex flex-col gap-3">
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-            <Input
-              placeholder="Rechercher une offre…"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
-            />
-          </div>
-          <div className="flex flex-wrap gap-1.5">
-            {filters.map((f) => (
-              <button
-                key={f.id}
-                type="button"
-                onClick={() => setFilter(f.id)}
-                className={cn(
-                  "rounded-full px-3 py-1.5 text-sm font-medium transition",
-                  filter === f.id
-                    ? "bg-forest text-white"
-                    : "bg-secondary text-muted-foreground hover:text-foreground",
-                )}
-              >
-                {f.label}
-              </button>
-            ))}
-          </div>
+      <section className="space-y-4 rounded-2xl border border-border bg-card p-4 md:p-5">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Rechercher par titre, slug, lieu, durée…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-11 border-0 bg-secondary/50 pl-9 shadow-none focus-visible:ring-forest/30"
+          />
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <span className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-            <Calendar className="h-4 w-4" />
-            Créée :
-          </span>
-          {createdFilters.map((f) => (
+
+        <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {primaryFilters.map((f) => (
             <button
               key={f.id}
               type="button"
-              onClick={() => setCreatedFilter(f.id)}
+              onClick={() => setFilter(f.id)}
               className={cn(
-                "rounded-full px-3 py-1.5 text-sm font-medium transition",
-                createdFilter === f.id
-                  ? "bg-forest/90 text-white"
+                "flex shrink-0 items-center gap-2 rounded-full px-4 py-2 text-sm font-medium transition",
+                filter === f.id
+                  ? "bg-forest text-white shadow-sm"
                   : "bg-secondary text-muted-foreground hover:text-foreground",
               )}
             >
               {f.label}
+              {f.count !== undefined && (
+                <span
+                  className={cn(
+                    "rounded-full px-1.5 py-0.5 text-xs tabular-nums",
+                    filter === f.id ? "bg-white/20" : "bg-background",
+                  )}
+                >
+                  {f.count}
+                </span>
+              )}
             </button>
           ))}
-          <span className="mx-1 hidden h-4 w-px bg-border sm:inline" />
-          <button
-            type="button"
-            onClick={() => setSortOrder((s) => (s === "newest" ? "oldest" : "newest"))}
-            className="rounded-full bg-secondary px-3 py-1.5 text-sm font-medium text-muted-foreground transition hover:text-foreground"
-          >
-            {sortOrder === "newest" ? "Plus récentes" : "Plus anciennes"}
-          </button>
         </div>
-      </div>
 
-      <div className="space-y-3 md:hidden">
-        {isLoading ? (
-          <div className="space-y-2">
-            {Array.from({ length: 4 }).map((_, i) => (
-              <Skeleton key={i} className="h-28 w-full rounded-xl" />
-            ))}
+        <div className="flex flex-col gap-3 border-t border-border/60 pt-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-sm text-muted-foreground">
+            <span className="font-semibold text-foreground">{filteredTrips.length}</span>
+            {" "}offre{filteredTrips.length !== 1 ? "s" : ""} affichée{filteredTrips.length !== 1 ? "s" : ""}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Select value={createdFilter} onValueChange={(v) => setCreatedFilter(v as CreatedFilter)}>
+              <SelectTrigger className="h-9 w-[140px] rounded-full bg-secondary border-0">
+                <SelectValue placeholder="Période" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Toutes dates</SelectItem>
+                <SelectItem value="7d">7 derniers jours</SelectItem>
+                <SelectItem value="30d">30 derniers jours</SelectItem>
+                <SelectItem value="90d">90 derniers jours</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={sortOrder} onValueChange={(v) => setSortOrder(v as SortOrder)}>
+              <SelectTrigger className="h-9 w-[160px] rounded-full bg-secondary border-0">
+                <SelectValue placeholder="Tri" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="departure">Départ le plus proche</SelectItem>
+                <SelectItem value="newest">Plus récentes</SelectItem>
+                <SelectItem value="oldest">Plus anciennes</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
-        ) : isError ? (
-          <p className="p-6 text-center text-sm text-destructive">Impossible de charger les offres.</p>
-        ) : filteredTrips.length === 0 ? (
-          <p className="p-8 text-center text-muted-foreground">Aucune offre ne correspond à votre recherche.</p>
-        ) : (
-          <ul className="space-y-2">
-            {filteredTrips.map((t) => {
-              const remaining = tripSpotsRemaining(t.capacity, t.spotsTaken);
-              const resaCount = reservationCounts.get(t.id) ?? 0;
-              return (
-                <li key={t.id}>
-                  <Link
-                    to={paths.tripDetail}
-                    params={{ tripId: t.id }}
-                    className="block rounded-xl border border-border bg-card p-4 active:bg-secondary/50"
-                  >
-                    <div className="flex gap-3">
-                      {t.photoUrl ? (
-                        <img src={t.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
-                      ) : (
-                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs text-muted-foreground">
-                          —
-                        </div>
-                      )}
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-foreground line-clamp-2">{t.title}</p>
-                        <p className="mt-0.5 text-sm text-muted-foreground">
-                          {t.spotsTaken}/{t.capacity} places · {formatPrice(t.price)} DA
-                        </p>
-                        <div className="mt-2 flex flex-wrap gap-1.5">
-                          <Badge variant={t.archived ? "outline" : t.active ? "default" : "secondary"} className="text-xs">
-                            {t.archived ? "Archivée" : t.active ? "Actif" : "Inactif"}
-                          </Badge>
-                          {remaining <= 0 && (
-                            <Badge variant="destructive" className="text-xs">
-                              Complet
-                            </Badge>
-                          )}
-                          {t.departureDate && (
-                            <Badge variant="outline" className="text-xs">
-                              {formatDepartureDate(t) ?? t.departureDate}
-                            </Badge>
-                          )}
-                        </div>
-                      </div>
-                      <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" />
-                    </div>
-                    <div className="mt-3 flex gap-2" onClick={(e) => e.preventDefault()}>
-                      {can("reservations", "create") && (
-                        <Button
-                          type="button"
-                          variant="default"
-                          size="sm"
-                          className="h-10 flex-1 gap-1.5"
-                          onClick={(e) => {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            navigate({ to: paths.inscriptions, search: { trip: t.id } });
-                          }}
-                        >
-                          <UserPlus className="h-4 w-4" />
-                          Inscrire
-                        </Button>
-                      )}
-                      <span className="flex items-center text-xs text-muted-foreground">
-                        {resaCount} résa.
-                      </span>
-                    </div>
-                  </Link>
-                </li>
-              );
-            })}
-          </ul>
-        )}
-      </div>
+        </div>
+      </section>
 
-      <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
-        {isLoading ? (
-          <div className="space-y-2 p-4">
-            {Array.from({ length: 6 }).map((_, i) => (
-              <Skeleton key={i} className="h-14 w-full" />
-            ))}
-          </div>
-        ) : isError ? (
-          <p className="p-8 text-center text-sm text-destructive">Impossible de charger les offres.</p>
-        ) : filteredTrips.length === 0 ? (
-          <p className="p-10 text-center text-muted-foreground">Aucune offre ne correspond à votre recherche.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow className="hover:bg-transparent">
-                <TableHead className="w-14" />
-                <TableHead className="min-w-[220px] text-base">Offre</TableHead>
-                <TableHead className="text-base">Statut</TableHead>
-                <TableHead className="text-base">Départ</TableHead>
-                <TableHead className="text-base">Créée le</TableHead>
-                <TableHead className="text-base">Prix</TableHead>
-                <TableHead className="text-base">Places</TableHead>
-                <TableHead className="text-base">Réservations</TableHead>
-                <TableHead className="w-32" />
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredTrips.map((t) => {
-                const remaining = tripSpotsRemaining(t.capacity, t.spotsTaken);
-                const fillPercent =
-                  t.capacity > 0 ? Math.min(100, Math.round((t.spotsTaken / t.capacity) * 100)) : 0;
-                const resaCount = reservationCounts.get(t.id) ?? 0;
-
-                return (
-                  <TableRow key={t.id} className="group cursor-pointer hover:bg-muted/40">
-                    <TableCell className="py-3" colSpan={9}>
-                      <Link
-                        to={paths.tripDetail}
-                        params={{ tripId: t.id }}
-                        className="grid grid-cols-[3.5rem_minmax(200px,1.3fr)_minmax(110px,0.7fr)_minmax(90px,0.5fr)_minmax(100px,0.55fr)_minmax(80px,0.45fr)_minmax(130px,0.65fr)_minmax(70px,0.35fr)_minmax(120px,0.5fr)] items-center gap-3"
-                      >
-                        <div>
-                          {t.photoUrl ? (
-                            <img
-                              src={t.photoUrl}
-                              alt=""
-                              className="h-12 w-12 rounded-lg object-cover"
-                            />
-                          ) : (
-                            <div className="flex h-12 w-12 items-center justify-center rounded-lg bg-secondary text-xs text-muted-foreground">
-                              —
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0">
-                          <p className="font-semibold text-foreground">{t.title}</p>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {t.meetingPoint || t.duration}
-                          </p>
-                        </div>
-                        <div className="flex flex-wrap gap-1">
-                          <Badge variant={t.archived ? "outline" : t.active ? "default" : "secondary"}>
-                            {t.archived ? "Archivée" : t.active ? "Actif" : "Inactif"}
-                          </Badge>
-                          {remaining <= 0 && <Badge variant="destructive">Complet</Badge>}
-                        </div>
-                        <div className="text-sm whitespace-nowrap">
-                          {t.departureDate ? formatDepartureDate(t) ?? t.departureDate : "—"}
-                        </div>
-                        <div className="text-sm whitespace-nowrap text-muted-foreground">
-                          {formatCreatedDate(t.createdAt)}
-                        </div>
-                        <div className="text-sm font-medium whitespace-nowrap">
-                          {formatPrice(t.price)} DA
-                        </div>
-                        <div className="min-w-[140px]">
-                          <div className="text-sm font-medium">
-                            {t.spotsTaken}/{t.capacity}
-                          </div>
-                          <div className="mt-1.5 h-1.5 w-full max-w-[120px] overflow-hidden rounded-full bg-border">
-                            <div
-                              className={cn(
-                                "h-full rounded-full",
-                                tripAvailabilityBarColor(remaining, t.capacity),
-                              )}
-                              style={{ width: `${fillPercent}%` }}
-                            />
-                          </div>
-                          <div className="mt-0.5 text-xs text-muted-foreground">
-                            {tripAvailabilityLabel(remaining, t.capacity)}
-                          </div>
-                        </div>
-                        <div className="text-sm font-medium">{resaCount}</div>
-                        <div className="flex items-center justify-end gap-1">
-                          {can("reservations", "create") && (
-                            <Button
-                              type="button"
-                              variant="outline"
-                              size="sm"
-                              className="h-8 gap-1 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                              onMouseDown={(e) => e.stopPropagation()}
-                              onClick={(e) => {
-                                e.preventDefault();
-                                e.stopPropagation();
-                                navigate({ to: paths.inscriptions, search: { trip: t.id } });
-                              }}
-                            >
-                              <UserPlus className="h-3.5 w-3.5" />
-                              Inscrire
-                            </Button>
-                          )}
-                          <TripShareLink
-                            trip={t}
-                            compact
-                            className="h-8 opacity-100 sm:opacity-0 sm:group-hover:opacity-100"
-                          />
-                          {can("trips", "delete") && (
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 text-destructive opacity-100 md:opacity-0 md:transition md:group-hover:opacity-100"
-                              aria-label="Supprimer"
-                              onClick={(e) => handleDelete(t, e)}
-                            >
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          )}
-                          <ChevronRight className="h-4 w-4 text-muted-foreground" />
-                        </div>
-                      </Link>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </div>
+      {isLoading ? (
+        <div className="space-y-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-44 w-full rounded-2xl" />
+          ))}
+        </div>
+      ) : isError ? (
+        <div className="rounded-2xl border border-destructive/30 bg-destructive/5 p-10 text-center text-sm text-destructive">
+          Impossible de charger les offres.
+        </div>
+      ) : filteredTrips.length === 0 ? (
+        <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-border bg-secondary/20 px-6 py-16 text-center">
+          <Package className="h-10 w-10 text-muted-foreground/60" />
+          <p className="mt-4 font-medium text-foreground">Aucune offre ne correspond</p>
+          <p className="mt-1 max-w-sm text-sm text-muted-foreground">
+            Modifiez les filtres ou créez une nouvelle offre pour commencer.
+          </p>
+          {can("trips", "create") && (
+            <Button className="mt-6 rounded-full" onClick={() => setDialogOpen(true)}>
+              <Plus className="mr-2 h-4 w-4" />
+              Créer une offre
+            </Button>
+          )}
+        </div>
+      ) : (
+        <div className="space-y-4">
+          {filteredTrips.map((t) => (
+            <TripListCard
+              key={t.id}
+              trip={t}
+              reservationCount={reservationCounts.get(t.id) ?? 0}
+              tripDetailPath={paths.tripDetail}
+              canInscribe={can("reservations", "create")}
+              canDelete={can("trips", "delete")}
+              onInscribe={() => navigate({ to: paths.inscriptions, search: { trip: t.id } })}
+              onDelete={(e) => handleDelete(t, e)}
+            />
+          ))}
+        </div>
+      )}
 
       <TripFormDialog
         open={dialogOpen}
@@ -455,6 +285,35 @@ export function TripsListPage() {
           navigate({ to: paths.tripDetail, params: { tripId: trip.id } });
         }}
       />
+    </div>
+  );
+}
+
+function SummaryCard({
+  label,
+  value,
+  icon: Icon,
+  accent = "muted",
+}: {
+  label: string;
+  value: number;
+  icon: typeof Package;
+  accent?: "forest" | "success" | "warning" | "muted";
+}) {
+  return (
+    <div
+      className={cn(
+        "rounded-2xl border border-border bg-card p-5",
+        accent === "forest" && "border-forest/20 bg-forest/5",
+        accent === "success" && "border-emerald-200/80 bg-emerald-50/40",
+        accent === "warning" && value > 0 && "border-amber-200/80 bg-amber-50/40",
+      )}
+    >
+      <div className="flex items-start justify-between gap-2">
+        <p className="text-sm font-medium text-muted-foreground">{label}</p>
+        <Icon className={cn("h-4 w-4 shrink-0", accent === "forest" ? "text-forest" : "text-muted-foreground")} />
+      </div>
+      <p className="mt-2 font-display text-3xl font-bold tabular-nums text-foreground">{value}</p>
     </div>
   );
 }
