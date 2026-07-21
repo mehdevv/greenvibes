@@ -13,11 +13,9 @@ One-page tourism website + minimal admin back-office for GreenVibes Agency (Béj
 ## Setup
 
 1. Copy `.env.example` to `.env` and add your Supabase credentials.
-2. Run migrations in Supabase SQL editor (in order):
-   - `supabase/migrations/001_greenvibes_initial.sql` … `005_admin_update_booking.sql`
-   - **`supabase/migrations/006_v2_trips_reservations.sql`** (v2 model)
-   - **`supabase/seed_trips.sql`** (demo trips)
-3. Enable Realtime on `trips` if not applied by migration.
+2. In Supabase → **SQL Editor**, paste and run the entire file:
+   - **`supabase/schema.sql`** (complete schema — no seeds)
+3. Enable Realtime on `trips` if not applied by the script (Database → Replication).
 4. Deploy Edge Functions (see **Edge Functions** below)
 5. Install and run:
 
