@@ -39,7 +39,7 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
   if (!trip) {
     return (
       <div className={cn("rounded-xl border border-dashed border-border bg-secondary/20 p-8 text-center", className)}>
-        <p className="text-sm text-muted-foreground">Sélectionnez une offre à gauche pour inscrire un client.</p>
+        <p className="text-sm text-muted-foreground">Sélectionnez une offre pour inscrire un client.</p>
       </div>
     );
   }
@@ -86,11 +86,11 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
   return (
     <form
       onSubmit={handleSubmit}
-      className={cn("rounded-xl border border-border bg-card p-4 md:p-5", className)}
+      className={cn("rounded-xl border border-border bg-card p-4 shadow-sm md:p-5", className)}
     >
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-2">
-          <UserPlus className="h-4 w-4 text-forest" />
+          <UserPlus className="h-5 w-5 text-forest" />
           <h2 className="font-display text-lg font-semibold text-foreground">Nouvelle inscription</h2>
         </div>
         <p className="text-sm text-muted-foreground">
@@ -105,7 +105,7 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
         </p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-3">
         <div>
           <Label htmlFor="rq-first">Prénom *</Label>
           <Input
@@ -114,8 +114,9 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
             value={form.firstName}
             onChange={(e) => setForm({ ...form, firstName: e.target.value })}
             placeholder="Prénom"
-            className="mt-1"
+            className="mt-1.5 h-12 text-base"
             autoComplete="given-name"
+            enterKeyHint="next"
           />
         </div>
         <div>
@@ -125,8 +126,9 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
             value={form.lastName}
             onChange={(e) => setForm({ ...form, lastName: e.target.value })}
             placeholder="Nom"
-            className="mt-1"
+            className="mt-1.5 h-12 text-base"
             autoComplete="family-name"
+            enterKeyHint="next"
           />
         </div>
         <div>
@@ -134,17 +136,19 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
           <Input
             id="rq-phone"
             type="tel"
+            inputMode="tel"
             value={form.phone}
             onChange={(e) => setForm({ ...form, phone: e.target.value })}
             placeholder="05XX XX XX XX"
-            className="mt-1"
+            className="mt-1.5 h-12 text-base"
             autoComplete="tel"
+            enterKeyHint="next"
           />
         </div>
       </div>
 
       {!full && (
-        <div className="mt-3">
+        <div className="mt-4">
           <Label htmlFor="rq-address">Adresse *</Label>
           <Textarea
             id="rq-address"
@@ -152,14 +156,19 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
             value={form.location}
             onChange={(e) => setForm({ ...form, location: e.target.value })}
             placeholder="Ex. 12 rue des pins, Béjaïa"
-            className="mt-1 resize-none"
+            className="mt-1.5 min-h-[4.5rem] resize-none text-base"
             autoComplete="street-address"
+            enterKeyHint="done"
           />
         </div>
       )}
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <Button type="submit" disabled={createReservation.isPending} className="gap-2">
+      <div className="mt-5 flex flex-col gap-2 sm:flex-row">
+        <Button
+          type="submit"
+          disabled={createReservation.isPending}
+          className="h-12 flex-1 gap-2 text-base sm:flex-none"
+        >
           {createReservation.isPending ? (
             <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
@@ -170,6 +179,7 @@ export function ReservationQuickForm({ trip, onCreated, className }: Reservation
         <Button
           type="button"
           variant="outline"
+          className="h-12 text-base"
           onClick={() => {
             setForm(emptyForm);
             firstNameRef.current?.focus();

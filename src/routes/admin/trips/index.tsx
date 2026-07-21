@@ -224,7 +224,90 @@ export function TripsListPage() {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-border bg-card">
+      <div className="space-y-3 md:hidden">
+        {isLoading ? (
+          <div className="space-y-2">
+            {Array.from({ length: 4 }).map((_, i) => (
+              <Skeleton key={i} className="h-28 w-full rounded-xl" />
+            ))}
+          </div>
+        ) : isError ? (
+          <p className="p-6 text-center text-sm text-destructive">Impossible de charger les offres.</p>
+        ) : filteredTrips.length === 0 ? (
+          <p className="p-8 text-center text-muted-foreground">Aucune offre ne correspond à votre recherche.</p>
+        ) : (
+          <ul className="space-y-2">
+            {filteredTrips.map((t) => {
+              const remaining = tripSpotsRemaining(t.capacity, t.spotsTaken);
+              const resaCount = reservationCounts.get(t.id) ?? 0;
+              return (
+                <li key={t.id}>
+                  <Link
+                    to={paths.tripDetail}
+                    params={{ tripId: t.id }}
+                    className="block rounded-xl border border-border bg-card p-4 active:bg-secondary/50"
+                  >
+                    <div className="flex gap-3">
+                      {t.photoUrl ? (
+                        <img src={t.photoUrl} alt="" className="h-14 w-14 shrink-0 rounded-lg object-cover" />
+                      ) : (
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-lg bg-secondary text-xs text-muted-foreground">
+                          —
+                        </div>
+                      )}
+                      <div className="min-w-0 flex-1">
+                        <p className="font-semibold text-foreground line-clamp-2">{t.title}</p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          {t.spotsTaken}/{t.capacity} places · {formatPrice(t.price)} DA
+                        </p>
+                        <div className="mt-2 flex flex-wrap gap-1.5">
+                          <Badge variant={t.archived ? "outline" : t.active ? "default" : "secondary"} className="text-xs">
+                            {t.archived ? "Archivée" : t.active ? "Actif" : "Inactif"}
+                          </Badge>
+                          {remaining <= 0 && (
+                            <Badge variant="destructive" className="text-xs">
+                              Complet
+                            </Badge>
+                          )}
+                          {t.departureDate && (
+                            <Badge variant="outline" className="text-xs">
+                              {formatDepartureDate(t) ?? t.departureDate}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      <ChevronRight className="mt-1 h-5 w-5 shrink-0 text-muted-foreground" />
+                    </div>
+                    <div className="mt-3 flex gap-2" onClick={(e) => e.preventDefault()}>
+                      {can("reservations", "create") && (
+                        <Button
+                          type="button"
+                          variant="default"
+                          size="sm"
+                          className="h-10 flex-1 gap-1.5"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            navigate({ to: paths.inscriptions, search: { trip: t.id } });
+                          }}
+                        >
+                          <UserPlus className="h-4 w-4" />
+                          Inscrire
+                        </Button>
+                      )}
+                      <span className="flex items-center text-xs text-muted-foreground">
+                        {resaCount} résa.
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-xl border border-border bg-card md:block">
         {isLoading ? (
           <div className="space-y-2 p-4">
             {Array.from({ length: 6 }).map((_, i) => (
@@ -345,7 +428,7 @@ export function TripsListPage() {
                               type="button"
                               variant="ghost"
                               size="icon"
-                              className="h-8 w-8 text-destructive opacity-0 transition group-hover:opacity-100"
+                              className="h-8 w-8 text-destructive opacity-100 md:opacity-0 md:transition md:group-hover:opacity-100"
                               aria-label="Supprimer"
                               onClick={(e) => handleDelete(t, e)}
                             >

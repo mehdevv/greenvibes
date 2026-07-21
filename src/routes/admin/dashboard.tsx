@@ -116,27 +116,27 @@ function AdminDashboardPage() {
             Vue complète de l&apos;activité — offres, places et réservations en un coup d&apos;œil.
           </p>
         </div>
-        <div className="flex flex-wrap gap-2">
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <Link to="/admin/trips">
-              <Package className="h-4 w-4" />
-              Voyages
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
+        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
+          <Button asChild variant="outline" size="sm" className="h-11 gap-1.5 sm:h-9">
             <Link to="/admin/inscriptions">
               <UserPlus className="h-4 w-4" />
-              Inscriptions
+              Inscrire
             </Link>
           </Button>
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
+          <Button asChild variant="outline" size="sm" className="h-11 gap-1.5 sm:h-9">
             <Link to="/admin/reservations">
               <BookOpen className="h-4 w-4" />
               Réservations
             </Link>
           </Button>
+          <Button asChild variant="outline" size="sm" className="col-span-2 h-11 gap-1.5 sm:col-span-1 sm:h-9">
+            <Link to="/admin/trips">
+              <Package className="h-4 w-4" />
+              Voyages
+            </Link>
+          </Button>
           {can("trips", "create") && (
-            <Button size="sm" className="gap-1.5 rounded-full" onClick={() => setDialogOpen(true)}>
+            <Button size="sm" className="col-span-2 h-11 gap-1.5 rounded-full sm:col-span-1 sm:h-9" onClick={() => setDialogOpen(true)}>
               <Plus className="h-4 w-4" />
               Nouvelle offre
             </Button>

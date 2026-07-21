@@ -7,10 +7,15 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { NatureTexture } from "@/components/motion";
+import {
+  PortalBottomNav,
+  PortalMobileDrawerContent,
+  type PortalNavItem,
+} from "@/components/admin/portal-mobile-shell";
 import { canAccessEmployeePortal } from "@/lib/admin-permissions";
 import { useAuth } from "@/lib/auth";
 import { PortalProvider } from "@/lib/portal";
-import { supabaseEmployee } from "@/lib/supabase";
+import { isSupabaseConfigured, supabaseEmployee } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 async function ensureEmployeeSession() {
@@ -41,6 +46,7 @@ async function ensureEmployeeSession() {
 
 export const Route = createFileRoute("/employe")({
   beforeLoad: async ({ location }) => {
+    if (!isSupabaseConfigured) return;
     if (location.pathname === "/employe/login") return;
     if (location.pathname.startsWith("/employe/entree/")) return;
 
@@ -83,6 +89,11 @@ function EmployeeLayout() {
   }, [sidebarCollapsed]);
 
   const visibleNavItems = useMemo(() => navItems.filter((item) => item.show(can)), [can]);
+
+  const mobileNavItems: PortalNavItem[] = useMemo(
+    () => visibleNavItems.map(({ to, label, icon }) => ({ to, label, icon })),
+    [visibleNavItems],
+  );
 
   if (pathname === "/employe/login" || pathname.startsWith("/employe/entree/")) {
     return <Outlet />;
@@ -268,17 +279,25 @@ function EmployeeLayout() {
           <div className="flex min-w-0 items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-                  <Menu className="h-4 w-4" />
+                <Button variant="outline" size="icon" className="h-11 w-11 shrink-0 md:hidden">
+                  <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-3">
-                <div className="mb-4 px-2">
-                  <div className="font-display text-sm font-bold">Espace employé</div>
-                </div>
-                <nav className="space-y-1">
-                  <NavLinks onNavigate={() => setMobileOpen(false)} />
-                </nav>
+              <SheetContent side="left" className="w-[min(100vw-2rem,20rem)] p-4">
+                <PortalMobileDrawerContent
+                  title="GreenVibes"
+                  subtitle="Espace employé"
+                  items={mobileNavItems}
+                  pathname={pathname}
+                  userLabel={user.fullName || user.email}
+                  readOnly={!canWrite}
+                  onNavigate={() => setMobileOpen(false)}
+                  onSignOut={async () => {
+                    setMobileOpen(false);
+                    await signOut();
+                    navigate({ to: "/employe/login" });
+                  }}
+                />
               </SheetContent>
             </Sheet>
             <Tooltip>
@@ -306,10 +325,16 @@ function EmployeeLayout() {
             Voir le site
           </Link>
         </header>
-        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 p-4 md:p-6 lg:p-8">
+        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 p-3 pb-24 md:p-6 md:pb-8 lg:p-8">
           <Outlet />
         </main>
       </div>
+
+      <PortalBottomNav
+        items={mobileNavItems}
+        pathname={pathname}
+        onMore={() => setMobileOpen(true)}
+      />
     </div>
     </TooltipProvider>
   );

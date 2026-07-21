@@ -30,6 +30,7 @@ import {
   useColumnDragReorder,
   useRowDragReorder,
 } from "@/components/admin/sheet-ui";
+import { SheetMobileCards } from "@/components/admin/sheet-mobile-cards";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { ArrowRightLeft, MessageCircle, Phone, Trash2 } from "lucide-react";
@@ -166,7 +167,15 @@ export function TripSheetView({
   }
 
   return (
-    <div className="min-h-[420px] flex-1 overflow-auto rounded-lg border border-border bg-white shadow-inner">
+    <div className="min-h-[320px] flex-1 md:min-h-[420px]">
+      <SheetMobileCards
+        columns={columns}
+        rows={rows}
+        isLoading={isLoading}
+        editable={canUpdate}
+        onSaveStatus={canUpdate ? (row, status) => saveCell(row, "status", status) : undefined}
+      />
+      <div className="hidden overflow-auto rounded-lg border border-border bg-white shadow-inner md:block md:min-h-[420px]">
         <table className="w-full border-collapse" style={{ minWidth }}>
           <thead>
             <tr>
@@ -300,6 +309,7 @@ export function TripSheetView({
             )}
           </tbody>
         </table>
+      </div>
     </div>
   );
 }

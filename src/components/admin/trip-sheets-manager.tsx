@@ -178,7 +178,7 @@ export function TripSheetsManager({ trip }: TripSheetsManagerProps) {
 
   return (
     <div className="flex min-h-0 flex-1 flex-col gap-4">
-      <div className="flex flex-wrap items-center justify-between gap-4 rounded-xl border border-border bg-card p-4">
+      <div className="flex flex-col gap-3 rounded-xl border border-border bg-card p-3 md:flex-row md:flex-wrap md:items-center md:justify-between md:gap-4 md:p-4">
         <div className="min-w-[200px]">
           <p className="text-sm font-medium text-muted-foreground">Remplissage</p>
           <p className="font-display text-3xl font-bold text-forest">
@@ -212,8 +212,8 @@ export function TripSheetsManager({ trip }: TripSheetsManagerProps) {
         )}
       </div>
 
-      <div className="flex flex-wrap items-center justify-between gap-2 border-b border-border pb-2">
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-3 border-b border-border pb-2">
+        <div className="-mx-1 flex items-center gap-2 overflow-x-auto px-1 pb-1">
         {isLoading ? (
           <span className="px-2 text-xs text-muted-foreground">Chargement des feuilles…</span>
         ) : (
@@ -233,7 +233,7 @@ export function TripSheetsManager({ trip }: TripSheetsManagerProps) {
                 onDragLeave={() => setDropTargetId((id) => (id === sheet.id ? null : id))}
                 onDrop={canUpdateLists ? (e) => void handleTabDrop(sheet.id)(e) : undefined}
                 className={cn(
-                  "rounded-lg border px-3 py-1.5 text-sm font-medium transition",
+                  "shrink-0 rounded-lg border px-3 py-2.5 text-sm font-medium transition md:py-1.5",
                   activeSheetId === sheet.id
                     ? "border-forest bg-forest/10 text-forest shadow-sm"
                     : "border-transparent bg-secondary/50 text-muted-foreground hover:bg-secondary hover:text-foreground",
@@ -265,12 +265,12 @@ export function TripSheetsManager({ trip }: TripSheetsManagerProps) {
         </div>
 
         {activeSheet && canReadLists && (
-          <div className="flex flex-wrap items-center gap-2">
-            <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={handleDownloadSheet}>
+          <div className="flex items-center gap-2">
+            <Button type="button" size="sm" variant="outline" className="h-10 flex-1 gap-1.5 md:h-9 md:flex-none" onClick={handleDownloadSheet}>
               <Download className="h-4 w-4" />
               Télécharger
             </Button>
-            <Button type="button" size="sm" variant="outline" className="gap-1.5" onClick={handlePrintSheet}>
+            <Button type="button" size="sm" variant="outline" className="h-10 flex-1 gap-1.5 md:h-9 md:flex-none" onClick={handlePrintSheet}>
               <Printer className="h-4 w-4" />
               Imprimer
             </Button>

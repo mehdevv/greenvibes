@@ -5,7 +5,7 @@ import { DEMO_TRIPS } from "@/lib/demo-trips";
 import { isTripPublicVisible } from "@/lib/trip-dates";
 import { PLACEHOLDER_IMAGES } from "@/lib/constants";
 import { parseListColumns } from "@/lib/trip-list-columns";
-import { getPublicImageUrl, getActiveSupabase } from "@/lib/supabase";
+import { getPublicImageUrl, getActiveSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
 
 const DEMO_PHOTO_BY_ID: Record<string, string> = {
@@ -90,6 +90,8 @@ async function archiveExpiredTrips() {
 }
 
 async function fetchActiveTrips(): Promise<Trip[]> {
+  if (!isSupabaseConfigured) return DEMO_TRIPS.filter(isTripPublicVisible);
+
   await archiveExpiredTrips();
 
   let { data, error } = await getActiveSupabase()
@@ -124,6 +126,8 @@ async function fetchActiveTrips(): Promise<Trip[]> {
 }
 
 async function fetchTripById(id: string): Promise<Trip | null> {
+  if (!isSupabaseConfigured) return DEMO_TRIPS.find((t) => t.id === id) ?? null;
+
   const { data, error } = await getActiveSupabase().from("trips").select("*").eq("id", id).maybeSingle();
   if (error) {
     if (error.code === "42P01") {
@@ -138,6 +142,8 @@ async function fetchTripById(id: string): Promise<Trip | null> {
 
 export async function fetchTripBySlug(slug: string): Promise<Trip | null> {
   const normalized = slug.trim().toLowerCase();
+  if (!isSupabaseConfigured) return DEMO_TRIPS.find((t) => t.slug === normalized) ?? null;
+
   const { data, error } = await getActiveSupabase()
     .from("trips")
     .select("*")
@@ -183,6 +189,8 @@ export function useTripsRealtime() {
   const qc = useQueryClient();
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
     const channel = getActiveSupabase()
       .channel("trips-realtime")
       .on(
@@ -331,6 +339,8 @@ export function useListAllTripsAdmin() {
   return useQuery({
     queryKey: ["trips", "admin"],
     queryFn: async (): Promise<Trip[]> => {
+      if (!isSupabaseConfigured) return [];
+
       await archiveExpiredTrips();
 
       const { data, error } = await getActiveSupabase()
@@ -340,7 +350,10 @@ export function useListAllTripsAdmin() {
         .order("departure_date", { ascending: false, nullsFirst: true })
         .order("created_at", { ascending: false });
 
-      if (error) throw new Error(formatPostgrestError(error));
+      if (error) {
+        if (error.code === "42P01" || error.code === "PGRST116") return [];
+        throw new Error(formatPostgrestError(error));
+      }
       const mediaMap = await fetchTripMediaMap((data ?? []).map((r) => String(r.id)));
       return (data ?? []).map((r) => mapTrip(r, mediaMap.get(String(r.id)) ?? []));
     },

@@ -10,6 +10,13 @@ import { tripSpotsRemaining } from "@/lib/availability";
 import { formatDepartureDate } from "@/lib/trip-dates";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { ExternalLink, Search } from "lucide-react";
@@ -91,16 +98,59 @@ export function InscriptionsPage({ tripIdFromUrl }: { tripIdFromUrl?: string }) 
   }
 
   return (
-    <div className="flex min-h-[calc(100vh-10rem)] flex-col gap-5">
+    <div className="flex min-h-0 flex-col gap-4 md:gap-5">
       <div>
-        <h1 className="font-display text-2xl font-bold text-foreground md:text-3xl">Inscriptions clients</h1>
-        <p className="mt-1 text-sm text-muted-foreground md:text-base">
+        <h1 className="font-display text-xl font-bold text-foreground md:text-3xl">Inscriptions clients</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
           Choisissez une offre, inscrivez un client et suivez son statut sur place.
         </p>
       </div>
 
+      {/* Mobile: trip picker */}
+      <div className="space-y-2 lg:hidden">
+        <label className="text-sm font-medium text-foreground">Offre</label>
+        {isLoading ? (
+          <Skeleton className="h-12 w-full rounded-xl" />
+        ) : (
+          <Select
+            value={selectedTripId ?? undefined}
+            onValueChange={(id) => {
+              const trip = filteredTrips.find((t) => t.id === id);
+              if (trip) selectTrip(trip);
+            }}
+          >
+            <SelectTrigger className="h-12 w-full text-base">
+              <SelectValue placeholder="Choisir une offre…" />
+            </SelectTrigger>
+            <SelectContent>
+              {filteredTrips.map((t) => {
+                const remaining = tripSpotsRemaining(t.capacity, t.spotsTaken);
+                return (
+                  <SelectItem key={t.id} value={t.id} className="py-3">
+                    <span className="line-clamp-1">{t.title}</span>
+                    <span className="ml-2 text-xs text-muted-foreground">
+                      ({t.spotsTaken}/{t.capacity}
+                      {remaining <= 0 ? " — complet" : ""})
+                    </span>
+                  </SelectItem>
+                );
+              })}
+            </SelectContent>
+          </Select>
+        )}
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            placeholder="Filtrer les offres…"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="h-11 pl-9"
+          />
+        </div>
+      </div>
+
       <div className="flex min-h-0 flex-1 flex-col gap-4 lg:flex-row">
-        <aside className="flex w-full shrink-0 flex-col rounded-xl border border-border bg-card lg:w-72 xl:w-80">
+        <aside className="hidden w-full shrink-0 flex-col rounded-xl border border-border bg-card lg:flex lg:w-72 xl:w-80">
           <div className="border-b border-border p-3">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -112,7 +162,7 @@ export function InscriptionsPage({ tripIdFromUrl }: { tripIdFromUrl?: string }) 
               />
             </div>
           </div>
-          <div className="max-h-[280px] flex-1 overflow-y-auto p-2 lg:max-h-none">
+          <div className="max-h-none flex-1 overflow-y-auto p-2">
             {isLoading ? (
               <div className="space-y-2 p-2">
                 {Array.from({ length: 5 }).map((_, i) => (
@@ -174,11 +224,14 @@ export function InscriptionsPage({ tripIdFromUrl }: { tripIdFromUrl?: string }) 
 
         <div className="flex min-w-0 flex-1 flex-col gap-4">
           {selectedTrip && (
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <h2 className="font-display text-xl font-semibold text-foreground">{selectedTrip.title}</h2>
+            <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-border bg-card p-3 md:bg-transparent md:p-0 md:border-0">
+              <div className="min-w-0">
+                <h2 className="font-display text-lg font-semibold text-foreground md:text-xl">{selectedTrip.title}</h2>
                 <p className="text-sm text-muted-foreground">
                   {selectedTrip.spotsTaken}/{selectedTrip.capacity} inscrits
+                  {selectedTrip.departureDate && (
+                    <> · {formatDepartureDate(selectedTrip) ?? selectedTrip.departureDate}</>
+                  )}
                 </p>
               </div>
               <Link
@@ -195,7 +248,7 @@ export function InscriptionsPage({ tripIdFromUrl }: { tripIdFromUrl?: string }) 
           <ReservationQuickForm trip={selectedTrip} />
 
           {selectedTrip ? (
-            <div className="flex min-h-[480px] flex-1 flex-col rounded-xl border border-border bg-card p-4 md:p-5">
+            <div className="flex min-h-[320px] flex-1 flex-col rounded-xl border border-border bg-card p-3 md:min-h-[480px] md:p-5">
               <h3 className="mb-3 font-semibold text-foreground">Participants &amp; statuts</h3>
               <TripSheetsManager trip={selectedTrip} />
             </div>

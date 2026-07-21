@@ -7,7 +7,7 @@ import type {
   TripSheetRow,
   UpdateTripSheetInput,
 } from "./types";
-import { getActiveSupabase } from "@/lib/supabase";
+import { getActiveSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
 import { parseListColumns } from "@/lib/trip-list-columns";
 import { updateReservationStatusById } from "./reservation-mutations";
@@ -342,7 +342,7 @@ export function useTripSheetsRealtime(tripId: string) {
   const qc = useQueryClient();
 
   useEffect(() => {
-    if (!tripId) return;
+    if (!tripId || !isSupabaseConfigured) return;
 
     const channel = getActiveSupabase()
       .channel(`trip-sheets-${tripId}`)

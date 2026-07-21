@@ -179,10 +179,10 @@ export function ReservationsWorkbook() {
   }
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] min-h-[480px] flex-col overflow-hidden rounded-lg border border-border bg-white shadow-sm">
-      <div className="flex shrink-0 flex-wrap items-center gap-2 border-b border-border bg-[#f8f9fa] px-3 py-2">
+    <div className="flex h-[min(70vh,calc(100dvh-14rem))] min-h-[360px] flex-col overflow-hidden rounded-lg border border-border bg-white shadow-sm md:h-[calc(100vh-12rem)] md:min-h-[480px]">
+      <div className="flex shrink-0 flex-col gap-2 border-b border-border bg-[#f8f9fa] p-3 md:flex-row md:flex-wrap md:items-center md:px-3 md:py-2">
         <Select value={tripId} onValueChange={setTripId}>
-          <SelectTrigger className="h-8 w-[min(100%,240px)] bg-white text-sm">
+          <SelectTrigger className="h-11 w-full bg-white text-base md:h-8 md:w-[min(100%,240px)] md:text-sm">
             <SelectValue placeholder="Vue" />
           </SelectTrigger>
           <SelectContent>
@@ -195,18 +195,18 @@ export function ReservationsWorkbook() {
           </SelectContent>
         </Select>
 
-        <div className="relative min-w-[140px] max-w-xs flex-1">
+        <div className="relative w-full md:min-w-[140px] md:max-w-xs md:flex-1">
           <Search className="absolute left-2.5 top-1/2 h-3.5 w-3.5 -translate-y-1/2 text-muted-foreground" />
           <Input
             placeholder="Filtrer…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            className="h-8 bg-white pl-8 text-sm"
+            className="h-11 bg-white pl-8 text-base md:h-8 md:text-sm"
           />
         </div>
 
         <Select value={status} onValueChange={(v) => setStatus(v as ReservationStatus | "all")}>
-          <SelectTrigger className="h-8 w-32 bg-white text-sm">
+          <SelectTrigger className="h-11 w-full bg-white text-base md:h-8 md:w-32 md:text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -217,12 +217,12 @@ export function ReservationsWorkbook() {
           </SelectContent>
         </Select>
 
-        <div className="ml-auto flex items-center gap-1.5">
+        <div className="flex items-center gap-1.5 md:ml-auto">
           <Button
             type="button"
             size="sm"
             variant="outline"
-            className="h-8 gap-1.5 bg-white px-2.5 text-xs"
+            className="h-10 flex-1 gap-1.5 bg-white px-2.5 text-xs md:h-8 md:flex-none"
             onClick={handleDownloadSheet}
             disabled={displayRows.length === 0}
           >

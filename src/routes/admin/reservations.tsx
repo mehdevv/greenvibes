@@ -21,5 +21,15 @@ export function ReservationsPage() {
     );
   }
 
-  return <ReservationsWorkbook />;
+  return (
+    <div className="space-y-4">
+      <div>
+        <h1 className="font-display text-xl font-bold text-foreground md:text-3xl">Réservations</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Consultez toutes les inscriptions par offre ou en ordre chronologique.
+        </p>
+      </div>
+      <ReservationsWorkbook />
+    </div>
+  );
 }

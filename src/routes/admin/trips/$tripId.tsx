@@ -24,8 +24,15 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, ExternalLink, Settings2, Trash2, UserPlus, Users } from "lucide-react";
+import { ArrowLeft, ExternalLink, MoreVertical, Settings2, Trash2, UserPlus, Users } from "lucide-react";
 import { toast } from "sonner";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export const Route = createFileRoute("/admin/trips/$tripId")({
   component: AdminTripDetailRoute,
@@ -120,28 +127,57 @@ export function TripDetailPage({ tripId }: { tripId: string }) {
           </p>
         </div>
 
-        <div className="flex flex-wrap gap-2">
+        <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row sm:flex-wrap">
           {can("reservations", "create") && (
-            <Button asChild variant="default" size="sm" className="gap-1.5">
+            <Button asChild variant="default" size="sm" className="h-11 w-full gap-1.5 sm:h-9 sm:w-auto">
               <Link to={paths.inscriptions} search={{ trip: trip.id }}>
                 <UserPlus className="h-4 w-4" />
                 Inscrire un client
               </Link>
             </Button>
           )}
-          <TripShareLink trip={trip} compact />
-          <Button asChild variant="outline" size="sm" className="gap-1.5">
-            <a href={getTripSharePath(trip)} target="_blank" rel="noopener noreferrer">
-              <ExternalLink className="h-4 w-4" />
-              Page publique
-            </a>
-          </Button>
-          {can("trips", "delete") && (
-            <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleDelete}>
-              <Trash2 className="h-4 w-4" />
-              Supprimer
-            </Button>
-          )}
+          <div className="flex gap-2">
+            <div className="hidden flex-wrap gap-2 sm:flex">
+              <TripShareLink trip={trip} compact />
+              <Button asChild variant="outline" size="sm" className="gap-1.5">
+                <a href={getTripSharePath(trip)} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="h-4 w-4" />
+                  Page publique
+                </a>
+              </Button>
+              {can("trips", "delete") && (
+                <Button variant="destructive" size="sm" className="gap-1.5" onClick={handleDelete}>
+                  <Trash2 className="h-4 w-4" />
+                  Supprimer
+                </Button>
+              )}
+            </div>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="h-11 w-11 shrink-0 sm:hidden">
+                  <MoreVertical className="h-5 w-5" />
+                  <span className="sr-only">Plus d&apos;actions</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuItem asChild>
+                  <a href={getTripSharePath(trip)} target="_blank" rel="noopener noreferrer">
+                    <ExternalLink className="mr-2 h-4 w-4" />
+                    Page publique
+                  </a>
+                </DropdownMenuItem>
+                {can("trips", "delete") && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive" onClick={handleDelete}>
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      Supprimer l&apos;offre
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </div>
 
@@ -167,10 +203,10 @@ export function TripDetailPage({ tripId }: { tripId: string }) {
         </TabsList>
 
         <TabsContent value="participants" className="mt-0 min-h-0 flex-1 focus-visible:outline-none">
-          <div className="flex min-h-[calc(100vh-16rem)] flex-col gap-4">
+          <div className="flex flex-col gap-4">
             {can("reservations", "create") && <ReservationQuickForm trip={trip} />}
             <Card className="flex min-h-0 flex-1 flex-col">
-              <CardContent className="flex min-h-0 flex-1 flex-col p-4 md:p-6">
+              <CardContent className="flex min-h-0 flex-1 flex-col p-3 md:p-6">
                 <TripSheetsManager trip={trip} />
               </CardContent>
             </Card>

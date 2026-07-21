@@ -19,7 +19,7 @@ import {
   type AdminResource,
 } from "@/lib/admin-permissions";
 import { usePortal } from "@/lib/portal";
-import { supabaseAdmin, supabaseEmployee } from "@/lib/supabase";
+import { isSupabaseConfigured, supabaseAdmin, supabaseEmployee } from "@/lib/supabase";
 
 export interface AuthState {
   user: AdminProfile | null;
@@ -39,6 +39,12 @@ function useAuthState(client: SupabaseClient): AuthState {
   const [isLoading, setIsLoading] = useState(true);
 
   const loadProfile = useCallback(async () => {
+    if (!isSupabaseConfigured) {
+      setUser(null);
+      setHasSession(false);
+      return null;
+    }
+
     const { data: { user: authUser } } = await client.auth.getUser();
     if (!authUser) {
       setUser(null);
@@ -75,6 +81,9 @@ function useAuthState(client: SupabaseClient): AuthState {
   }, [client, loadProfile]);
 
   const signIn = useCallback(async (email: string, password: string) => {
+    if (!isSupabaseConfigured) {
+      throw new Error("Supabase n'est pas configuré. Ajoutez VITE_SUPABASE_URL et VITE_SUPABASE_ANON_KEY.");
+    }
     const { error } = await client.auth.signInWithPassword({ email, password });
     if (error) throw error;
     return loadProfile();

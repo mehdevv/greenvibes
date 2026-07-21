@@ -1,7 +1,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect } from "react";
 import type { CreateReservationInput, CreateReservationResult, Reservation, ReservationStatus, Trip, UpdateReservationInput } from "./types";
-import { invokeFunction, getActiveSupabase } from "@/lib/supabase";
+import { invokeFunction, getActiveSupabase, isSupabaseConfigured } from "@/lib/supabase";
 import { formatPostgrestError } from "./db-utils";
 import { parseListColumns } from "@/lib/trip-list-columns";
 import {
@@ -148,6 +148,8 @@ export function useListReservations(
     queryKey: ["reservations", params],
     enabled: (options?.enabled ?? true) && params?.tripId !== "",
     queryFn: async (): Promise<Reservation[]> => {
+      if (!isSupabaseConfigured) return [];
+
       let query = getActiveSupabase()
         .from("reservations")
         .select(RESERVATION_SELECT)
@@ -165,7 +167,10 @@ export function useListReservations(
       }
 
       const { data, error } = await query;
-      if (error) throw new Error(formatPostgrestError(error));
+      if (error) {
+        if (error.code === "42P01" || error.code === "PGRST116") return [];
+        throw new Error(formatPostgrestError(error));
+      }
       return (data ?? []).map((r) => mapReservation(r));
     },
   });
@@ -266,6 +271,8 @@ export function useReservationsRealtime() {
   const qc = useQueryClient();
 
   useEffect(() => {
+    if (!isSupabaseConfigured) return;
+
     const channel = getActiveSupabase()
       .channel("reservations-realtime")
       .on(

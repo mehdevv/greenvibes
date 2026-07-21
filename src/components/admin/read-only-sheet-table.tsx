@@ -1,5 +1,6 @@
 import { useMemo } from "react";
 import type { TripSheetColumn, TripSheetRow } from "@/api/types";
+import { SheetMobileCards } from "@/components/admin/sheet-mobile-cards";
 import { SHEET_CELL, SHEET_HEAD, SHEET_ROW_NUM } from "@/components/admin/sheet-ui";
 import { cellDisplayValue } from "@/lib/workbook-export";
 import { cn } from "@/lib/utils";
@@ -23,7 +24,9 @@ export function ReadOnlySheetTable({ columns, rows, isLoading }: ReadOnlySheetTa
   }
 
   return (
-    <div className="min-h-0 flex-1 overflow-auto bg-white">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <SheetMobileCards columns={columns} rows={rows} isLoading={isLoading} />
+      <div className="hidden min-h-0 flex-1 overflow-auto bg-white md:block">
       <table className="w-full border-collapse" style={{ minWidth }}>
         <thead>
           <tr>
@@ -59,6 +62,7 @@ export function ReadOnlySheetTable({ columns, rows, isLoading }: ReadOnlySheetTa
           )}
         </tbody>
       </table>
+      </div>
     </div>
   );
 }

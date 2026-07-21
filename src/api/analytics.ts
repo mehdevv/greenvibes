@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { AnalyticsOverview, Reservation } from "./types";
-import { supabase } from "@/lib/supabase";
+import { supabase, isSupabaseConfigured } from "@/lib/supabase";
 
 function startOfDay(d: Date) {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).toISOString();
@@ -45,6 +45,20 @@ export function useAnalyticsOverview() {
   return useQuery({
     queryKey: ["analytics", "overview"],
     queryFn: async (): Promise<AnalyticsOverview> => {
+      const emptyOverview: AnalyticsOverview = {
+        bookingsToday: 0,
+        bookingsThisMonth: 0,
+        revenueThisMonth: 0,
+        totalClients: 0,
+        activeOffers: 0,
+        fillRatePercent: 0,
+        bookingsTrend: [],
+        topOffers: [],
+        recentBookings: [],
+      };
+
+      if (!isSupabaseConfigured) return emptyOverview;
+
       const now = new Date();
       const todayStart = startOfDay(now);
       const monthStart = startOfMonth(now);
@@ -100,6 +114,8 @@ export function useAnalyticsOverview() {
       ].filter(Boolean);
 
       if (errors.length > 0) {
+        const code = errors[0]?.code;
+        if (code === "42P01" || code === "PGRST116") return emptyOverview;
         throw new Error(
           errors[0]?.message ?? "Accès refusé aux données admin. Vérifiez votre profil administrateur.",
         );

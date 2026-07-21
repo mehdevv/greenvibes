@@ -21,10 +21,17 @@ import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { cn } from "@/lib/utils";
 import { NatureTexture } from "@/components/motion";
-import { supabaseAdmin } from "@/lib/supabase";
+import {
+  PortalBottomNav,
+  PortalMobileDrawerContent,
+  type PortalNavItem,
+} from "@/components/admin/portal-mobile-shell";
+import { SupabaseConfigBanner } from "@/components/admin/supabase-config-banner";
+import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async ({ location }) => {
+    if (!isSupabaseConfigured) return;
     if (location.pathname === "/admin/login" || location.pathname === "/admin/setup") return;
 
     const { data: { session } } = await supabaseAdmin.auth.getSession();
@@ -80,6 +87,11 @@ function AdminLayout() {
   const visibleNavItems = useMemo(
     () => navItems.filter((item) => item.show(can, isSuperAdmin)),
     [can, isSuperAdmin],
+  );
+
+  const mobileNavItems: PortalNavItem[] = useMemo(
+    () => visibleNavItems.map(({ to, label, icon }) => ({ to, label, icon })),
+    [visibleNavItems],
   );
 
   const isAuthPage = pathname === "/admin/login" || pathname === "/admin/setup";
@@ -265,14 +277,25 @@ function AdminLayout() {
           <div className="flex min-w-0 items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="shrink-0 md:hidden">
-                  <Menu className="h-4 w-4" />
+                <Button variant="outline" size="icon" className="h-11 w-11 shrink-0 md:hidden">
+                  <Menu className="h-5 w-5" />
                 </Button>
               </SheetTrigger>
-              <SheetContent side="left" className="w-64 p-3">
-                <nav className="mt-8 space-y-1">
-                  <NavLinks onNavigate={() => setMobileOpen(false)} />
-                </nav>
+              <SheetContent side="left" className="w-[min(100vw-2rem,20rem)] p-4">
+                <PortalMobileDrawerContent
+                  title="GreenVibes"
+                  subtitle="Administration"
+                  items={mobileNavItems}
+                  pathname={pathname}
+                  userLabel={user.fullName || user.email}
+                  readOnly={!canWrite}
+                  onNavigate={() => setMobileOpen(false)}
+                  onSignOut={async () => {
+                    setMobileOpen(false);
+                    await signOut();
+                    navigate({ to: "/admin/login" });
+                  }}
+                />
               </SheetContent>
             </Sheet>
             <Tooltip>
@@ -300,10 +323,19 @@ function AdminLayout() {
             Voir le site
           </Link>
         </header>
-        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 p-4 md:p-6 lg:p-8">
+        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 p-3 pb-24 md:p-6 md:pb-8 lg:p-8">
+          <div className="mb-4">
+            <SupabaseConfigBanner />
+          </div>
           <Outlet />
         </main>
       </div>
+
+      <PortalBottomNav
+        items={mobileNavItems}
+        pathname={pathname}
+        onMore={() => setMobileOpen(true)}
+      />
     </div>
     </TooltipProvider>
   );
