@@ -1,5 +1,5 @@
-import { Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import {
   LayoutDashboard,
   Package,
@@ -27,27 +27,14 @@ import {
   type PortalNavItem,
 } from "@/components/admin/portal-mobile-shell";
 import { SupabaseConfigBanner } from "@/components/admin/supabase-config-banner";
-import { isSupabaseConfigured, supabaseAdmin } from "@/lib/supabase";
+import { AdminOutletTransition } from "@/components/admin/admin-outlet-transition";
+import { ensureOwnerAdminSession, clearAdminSessionCache } from "@/lib/admin-session-guard";
+import { isSupabaseConfigured } from "@/lib/supabase";
 
 export const Route = createFileRoute("/admin")({
   beforeLoad: async ({ location }) => {
-    if (!isSupabaseConfigured) return;
     if (location.pathname === "/admin/login" || location.pathname === "/admin/setup") return;
-
-    const { data: { session } } = await supabaseAdmin.auth.getSession();
-    if (!session) {
-      throw redirect({ to: "/admin/login" });
-    }
-
-    const { data: profile } = await supabaseAdmin
-      .from("admin_profiles")
-      .select("role")
-      .eq("id", session.user.id)
-      .maybeSingle();
-
-    if (profile?.role === "worker") {
-      throw redirect({ to: "/employe/login" });
-    }
+    await ensureOwnerAdminSession("/admin/login");
   },
   component: AdminLayoutRoot,
 });
@@ -97,7 +84,7 @@ function AdminLayout() {
   const isAuthPage = pathname === "/admin/login" || pathname === "/admin/setup";
 
   if (isAuthPage) {
-    return <Outlet />;
+    return <AdminOutletTransition />;
   }
 
   if (isLoading) {
@@ -123,6 +110,7 @@ function AdminLayout() {
               variant="outline"
               onClick={async () => {
                 await signOut();
+                clearAdminSessionCache();
                 navigate({ to: "/admin/login" });
               }}
             >
@@ -174,6 +162,7 @@ function AdminLayout() {
           <Link
             key={item.to}
             to={item.to}
+            preload="intent"
             onClick={onNavigate}
             className={cn(
               "flex items-center rounded-xl text-sm font-medium transition",
@@ -204,7 +193,7 @@ function AdminLayout() {
 
   return (
     <TooltipProvider delayDuration={0}>
-    <div className="relative flex min-h-screen bg-secondary/40">
+    <div className="relative flex min-h-dvh bg-secondary/40 md:h-dvh md:max-h-dvh md:overflow-hidden">
       <NatureTexture className="opacity-60" />
       <aside
         className={cn(
@@ -247,6 +236,7 @@ function AdminLayout() {
                   className="w-full"
                   onClick={async () => {
                     await signOut();
+                    clearAdminSessionCache();
                     navigate({ to: "/admin/login" });
                   }}
                   aria-label="Déconnexion"
@@ -262,6 +252,7 @@ function AdminLayout() {
               className="w-full justify-start gap-2"
               onClick={async () => {
                 await signOut();
+                clearAdminSessionCache();
                 navigate({ to: "/admin/login" });
               }}
             >
@@ -272,8 +263,8 @@ function AdminLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-6">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:h-dvh md:max-h-dvh">
+        <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -293,6 +284,7 @@ function AdminLayout() {
                   onSignOut={async () => {
                     setMobileOpen(false);
                     await signOut();
+                    clearAdminSessionCache();
                     navigate({ to: "/admin/login" });
                   }}
                 />
@@ -323,11 +315,11 @@ function AdminLayout() {
             Voir le site
           </Link>
         </header>
-        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 p-3 pb-24 md:p-6 md:pb-8 lg:p-8">
+        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 overflow-y-auto overscroll-contain p-3 pb-24 md:p-6 md:pb-8 lg:p-8">
           <div className="mb-4">
             <SupabaseConfigBanner />
           </div>
-          <Outlet />
+          <AdminOutletTransition />
         </main>
       </div>
 

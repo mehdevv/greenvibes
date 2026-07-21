@@ -59,7 +59,7 @@ export function TripDetailPage({ tripId }: { tripId: string }) {
   const { data: reservations = [] } = useListReservationsByTrip(tripId);
   const deleteTrip = useDeleteTrip();
 
-  if (isLoading) {
+  if (isLoading && !trip) {
     return (
       <div className="space-y-4">
         <Skeleton className="h-8 w-64" />

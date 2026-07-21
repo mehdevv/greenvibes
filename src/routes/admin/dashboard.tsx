@@ -75,7 +75,7 @@ function AdminDashboardPage() {
     return list.slice(0, 6);
   }, [trips]);
 
-  const loading = isLoading || tripsLoading || resaLoading;
+  const loading = (isLoading && !data) || (tripsLoading && !trips) || (resaLoading && !allReservations.length);
 
   if (loading) {
     return (

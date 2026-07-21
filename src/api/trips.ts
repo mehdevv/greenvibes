@@ -322,6 +322,7 @@ export function useUpdateTripCapacity() {
 export function useListAllTripsAdmin() {
   return useQuery({
     queryKey: ["trips", "admin"],
+    staleTime: 120_000,
     queryFn: async (): Promise<Trip[]> => {
       if (!isSupabaseConfigured) return [];
 

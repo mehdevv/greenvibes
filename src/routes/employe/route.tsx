@@ -1,8 +1,9 @@
-import { createFileRoute, Link, Navigate, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
+import { createFileRoute, Link, Navigate, useNavigate, useRouterState } from "@tanstack/react-router";
 import { redirect } from "@tanstack/react-router";
 import { BookOpen, LogOut, Menu, Package, PanelLeft, PanelLeftClose, UserPlus } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { Logo } from "@/components/brand/logo";
+import { AdminOutletTransition } from "@/components/admin/admin-outlet-transition";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
@@ -96,7 +97,7 @@ function EmployeeLayout() {
   );
 
   if (pathname === "/employe/login" || pathname.startsWith("/employe/entree/")) {
-    return <Outlet />;
+    return <AdminOutletTransition />;
   }
 
   if (pathname === "/employe" || pathname === "/employe/") {
@@ -178,6 +179,7 @@ function EmployeeLayout() {
           <Link
             key={item.to}
             to={item.to}
+            preload="intent"
             onClick={onNavigate}
             className={cn(
               "flex items-center rounded-xl text-sm font-medium transition",
@@ -208,7 +210,7 @@ function EmployeeLayout() {
 
   return (
     <TooltipProvider delayDuration={0}>
-    <div className="relative flex min-h-screen bg-secondary/40">
+    <div className="relative flex min-h-dvh bg-secondary/40 md:h-dvh md:max-h-dvh md:overflow-hidden">
       <NatureTexture className="opacity-60" />
       <aside
         className={cn(
@@ -274,8 +276,8 @@ function EmployeeLayout() {
         </div>
       </aside>
 
-      <div className="flex min-w-0 flex-1 flex-col">
-        <header className="sticky top-0 z-20 flex items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-6">
+      <div className="flex min-h-0 min-w-0 flex-1 flex-col md:h-dvh md:max-h-dvh">
+        <header className="sticky top-0 z-20 flex shrink-0 items-center justify-between border-b border-border bg-card/95 px-4 py-3 backdrop-blur md:px-6">
           <div className="flex min-w-0 items-center gap-2">
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
               <SheetTrigger asChild>
@@ -325,8 +327,8 @@ function EmployeeLayout() {
             Voir le site
           </Link>
         </header>
-        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 p-3 pb-24 md:p-6 md:pb-8 lg:p-8">
-          <Outlet />
+        <main className="relative z-10 mx-auto w-full max-w-[1800px] flex-1 overflow-y-auto overscroll-contain p-3 pb-24 md:p-6 md:pb-8 lg:p-8">
+          <AdminOutletTransition />
         </main>
       </div>
 

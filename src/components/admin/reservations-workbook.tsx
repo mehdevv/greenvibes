@@ -166,7 +166,7 @@ export function ReservationsWorkbook() {
     }
   };
 
-  if (tripsLoading) {
+  if (tripsLoading && trips.length === 0) {
     return <Skeleton className="h-[calc(100vh-10rem)] w-full rounded-lg" />;
   }
 

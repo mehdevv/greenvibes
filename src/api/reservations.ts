@@ -146,6 +146,7 @@ export function useListReservations(
 ) {
   return useQuery({
     queryKey: ["reservations", params],
+    staleTime: 60_000,
     enabled: (options?.enabled ?? true) && params?.tripId !== "",
     queryFn: async (): Promise<Reservation[]> => {
       if (!isSupabaseConfigured) return [];

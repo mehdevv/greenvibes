@@ -49,6 +49,7 @@ export function PortalMobileDrawerContent({
             <Link
               key={item.to}
               to={item.to}
+              preload="intent"
               onClick={onNavigate}
               className={cn(
                 "flex items-center gap-3 rounded-xl px-3 py-3 text-base font-medium transition",
@@ -103,6 +104,7 @@ export function PortalBottomNav({ items, pathname, onMore }: PortalBottomNavProp
             <Link
               key={item.to}
               to={item.to}
+              preload="intent"
               className={cn(
                 "flex min-h-[3.5rem] flex-1 flex-col items-center justify-center gap-0.5 px-1 py-2 text-[10px] font-medium transition",
                 active ? "text-forest" : "text-muted-foreground",

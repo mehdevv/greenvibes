@@ -44,6 +44,7 @@ function mapReservationRow(row: Record<string, unknown>): Reservation {
 export function useAnalyticsOverview() {
   return useQuery({
     queryKey: ["analytics", "overview"],
+    staleTime: 120_000,
     queryFn: async (): Promise<AnalyticsOverview> => {
       const emptyOverview: AnalyticsOverview = {
         bookingsToday: 0,
