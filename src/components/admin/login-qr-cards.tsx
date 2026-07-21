@@ -80,18 +80,20 @@ function LoginQrCard({ portal }: { portal: LoginPortal }) {
   );
 }
 
-export function PortalLoginQrSection() {
+export function PortalLoginQrSection({ embedded }: { embedded?: boolean } = {}) {
   return (
-    <section className="space-y-3">
-      <div>
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
-          Connexion rapide
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          QR codes à scanner pour accéder directement aux pages de connexion admin et employé.
-          Les employés ont aussi un QR personnel à usage unique sur la page Équipe.
-        </p>
-      </div>
+    <section className={embedded ? "space-y-4" : "space-y-4"}>
+      {!embedded && (
+        <div>
+          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            Connexion rapide
+          </h2>
+          <p className="mt-1 text-sm text-muted-foreground">
+            QR codes à scanner pour accéder directement aux pages de connexion admin et employé.
+            Les employés ont aussi un QR personnel à usage unique sur la page Équipe.
+          </p>
+        </div>
+      )}
       <div className="grid gap-4 lg:grid-cols-2">
         <LoginQrCard portal="admin" />
         <LoginQrCard portal="employee" />

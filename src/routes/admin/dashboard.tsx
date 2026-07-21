@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import {
   useAnalyticsOverview,
   useListAllTripsAdmin,
@@ -8,6 +8,7 @@ import {
   useTripsRealtime,
   reservationStatusLabel,
 } from "@/api";
+import { QuickActionCard } from "@/components/admin/dashboard-quick-actions";
 import { TripFormDialog } from "@/components/admin/trip-form-dialog";
 import { PortalLoginQrSection } from "@/components/admin/login-qr-cards";
 import { useAuth } from "@/lib/auth";
@@ -15,7 +16,13 @@ import { computeAdminOverviewStats } from "@/lib/admin-overview-stats";
 import { tripSpotsRemaining } from "@/lib/availability";
 import { formatDepartureDate } from "@/lib/trip-dates";
 import { formatPrice } from "@/lib/constants";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -31,6 +38,8 @@ import {
   Clock,
   CheckCircle2,
   XCircle,
+  ChevronRight,
+  QrCode,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -43,7 +52,6 @@ import {
   BarChart,
   Bar,
 } from "recharts";
-import { useState } from "react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/admin/dashboard")({
@@ -51,7 +59,7 @@ export const Route = createFileRoute("/admin/dashboard")({
 });
 
 function AdminDashboardPage() {
-  const { canWrite, can, isSuperAdmin } = useAuth();
+  const { user, can } = useAuth();
   const [dialogOpen, setDialogOpen] = useState(false);
   const { data, isLoading, isError, error, refetch } = useAnalyticsOverview();
   const { data: trips, isLoading: tripsLoading } = useListAllTripsAdmin();
@@ -72,33 +80,40 @@ function AdminDashboardPage() {
       }
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     });
-    return list.slice(0, 6);
+    return list.slice(0, 5);
   }, [trips]);
 
   const loading = (isLoading && !data) || (tripsLoading && !trips) || (resaLoading && !allReservations.length);
 
+  const greetingName = user?.fullName?.split(" ")[0] || user?.email?.split("@")[0] || "Admin";
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <Skeleton className="h-10 w-64" />
-        <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
-          {Array.from({ length: 12 }).map((_, i) => (
-            <Skeleton key={i} className="h-24 rounded-xl" />
+      <div className="space-y-10">
+        <Skeleton className="h-16 w-full max-w-md rounded-2xl" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-32 rounded-2xl" />
           ))}
         </div>
-        <Skeleton className="h-64 rounded-xl" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <Skeleton key={i} className="h-28 rounded-2xl" />
+          ))}
+        </div>
+        <Skeleton className="h-72 rounded-2xl" />
       </div>
     );
   }
 
   if (isError || !data) {
     return (
-      <div className="rounded-md border border-border bg-card p-8 text-center">
+      <div className="rounded-2xl border border-border bg-card p-10 text-center">
         <h1 className="font-display text-xl font-bold text-foreground">Impossible de charger le tableau de bord</h1>
-        <p className="mt-3 text-sm text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-md text-sm text-muted-foreground">
           {error instanceof Error
             ? error.message
-            : "Vérifiez que les migrations Supabase sont appliquées et que vous êtes connecté en tant qu'admin."}
+            : "Vérifiez que le schéma Supabase est appliqué et que vous êtes connecté en tant qu'admin."}
         </p>
         <Button className="mt-6 rounded-full" onClick={() => refetch()}>
           Réessayer
@@ -107,215 +122,171 @@ function AdminDashboardPage() {
     );
   }
 
+  const reservationRows = [
+    { label: "Confirmées", value: stats.reservationsConfirmed, color: "bg-emerald-500", icon: CheckCircle2 },
+    { label: "En attente", value: stats.reservationsWaitlisted, color: "bg-amber-500", icon: Clock },
+    { label: "Annulées", value: stats.reservationsCancelled, color: "bg-muted-foreground/50", icon: XCircle },
+  ];
+  const resaMax = Math.max(stats.reservationsTotal, 1);
+
   return (
-    <div className="space-y-8">
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div>
-          <h1 className="font-display text-2xl font-bold text-foreground md:text-3xl">Tableau de bord</h1>
-          <p className="mt-1 text-sm text-muted-foreground md:text-base">
-            Vue complète de l&apos;activité — offres, places et réservations en un coup d&apos;œil.
-          </p>
-        </div>
-        <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap">
-          <Button asChild variant="outline" size="sm" className="h-11 gap-1.5 sm:h-9">
-            <Link to="/admin/inscriptions">
-              <UserPlus className="h-4 w-4" />
-              Inscrire
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="h-11 gap-1.5 sm:h-9">
-            <Link to="/admin/reservations">
-              <BookOpen className="h-4 w-4" />
-              Réservations
-            </Link>
-          </Button>
-          <Button asChild variant="outline" size="sm" className="col-span-2 h-11 gap-1.5 sm:col-span-1 sm:h-9">
-            <Link to="/admin/trips">
-              <Package className="h-4 w-4" />
-              Voyages
-            </Link>
-          </Button>
+    <div className="space-y-10 pb-4">
+      {/* Welcome */}
+      <header className="space-y-1">
+        <p className="text-sm font-medium text-forest">Bonjour, {greetingName}</p>
+        <h1 className="font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
+          Tableau de bord
+        </h1>
+        <p className="max-w-2xl text-sm text-muted-foreground md:text-base">
+          Actions, chiffres clés et activité récente — tout est regroupé ici.
+        </p>
+      </header>
+
+      {/* Quick actions */}
+      <section className="space-y-4">
+        <SectionHeading title="Actions rapides" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          {can("reservations", "create") && (
+            <QuickActionCard
+              to="/admin/inscriptions"
+              title="Inscrire un client"
+              description="Ajouter une réservation sur place, en 30 secondes."
+              icon={UserPlus}
+              variant="primary"
+            />
+          )}
           {can("trips", "create") && (
-            <Button size="sm" className="col-span-2 h-11 gap-1.5 rounded-full sm:col-span-1 sm:h-9" onClick={() => setDialogOpen(true)}>
-              <Plus className="h-4 w-4" />
-              Nouvelle offre
-            </Button>
+            <QuickActionCard
+              title="Nouvelle offre"
+              description="Créer un voyage, définir le slug et publier."
+              icon={Plus}
+              onClick={() => setDialogOpen(true)}
+            />
+          )}
+          {can("reservations", "read") && (
+            <QuickActionCard
+              to="/admin/reservations"
+              title="Réservations"
+              description="Consulter et gérer toutes les inscriptions."
+              icon={BookOpen}
+            />
+          )}
+          {can("trips", "read") && (
+            <QuickActionCard
+              to="/admin/trips"
+              title="Voyages"
+              description="Modifier les offres, places et listes participants."
+              icon={Package}
+            />
           )}
         </div>
-      </div>
+      </section>
 
-      <PortalLoginQrSection />
-
-      <section className="space-y-3">
-        <SectionTitle>Activité récente</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatPill
+      {/* Key metrics */}
+      <section className="space-y-4">
+        <SectionHeading title="Vue d'ensemble" />
+        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KpiCard
             label="Réservations aujourd'hui"
             value={data.bookingsToday}
+            hint={`${data.bookingsThisMonth} ce mois`}
             icon={Calendar}
           />
-          <StatPill
-            label="Réservations ce mois"
-            value={data.bookingsThisMonth}
-            sub={`${data.totalClients} clients uniques`}
-            icon={TrendingUp}
-          />
-          <StatPill
+          <KpiCard
             label="Chiffre d'affaires"
             value={`${formatPrice(data.revenueThisMonth)} DA`}
-            sub="Ce mois (confirmées)"
+            hint="Confirmées ce mois"
             icon={TrendingUp}
-            valueClassName="text-2xl md:text-3xl"
           />
-          <StatPill
-            label="Clients ce mois"
-            value={data.totalClients}
-            sub="Contacts distincts"
-            icon={Users}
-          />
-        </div>
-      </section>
-
-      <section className="space-y-3">
-        <SectionTitle>Offres &amp; capacité</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatPill
-            label="Offres"
-            value={stats.offers}
-            sub={`${stats.activeOffers} actives · ${stats.archivedOffers} archivées`}
+          <KpiCard
+            label="Offres actives"
+            value={stats.activeOffers}
+            hint={`${stats.offers} au total · ${stats.archivedOffers} archivées`}
             icon={Package}
           />
-          <StatPill
-            label="Places prises"
-            value={stats.totalSpotsTaken}
-            sub={`sur ${stats.totalCapacity} places`}
+          <KpiCard
+            label="Remplissage"
+            value={`${stats.fillRate}%`}
+            hint={`${stats.totalSpotsTaken} / ${stats.totalCapacity} places`}
             icon={Armchair}
           />
-          <StatPill
-            label="Remplissage global"
-            value={`${stats.fillRate}%`}
-            sub={`${stats.fullOffers} voyage${stats.fullOffers > 1 ? "s" : ""} complet${stats.fullOffers > 1 ? "s" : ""}`}
-            icon={TrendingUp}
-          />
-          <StatPill
-            label="Voyages actifs"
-            value={stats.activeOffers}
-            sub={stats.inactiveOffers > 0 ? `${stats.inactiveOffers} inactif${stats.inactiveOffers > 1 ? "s" : ""}` : "Tous publiés"}
-            icon={Package}
-          />
         </div>
       </section>
 
-      <section className="space-y-3">
-        <SectionTitle>Réservations</SectionTitle>
-        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4">
-          <StatPill
-            label="Total"
-            value={stats.reservationsTotal}
-            sub="Toutes les inscriptions"
-            icon={BookOpen}
-          />
-          <StatPill
-            label="Confirmées"
-            value={stats.reservationsConfirmed}
-            sub="Places validées"
-            icon={CheckCircle2}
-            accent="success"
-          />
-          <StatPill
-            label="En attente"
-            value={stats.reservationsWaitlisted}
-            sub="Liste d'attente"
-            icon={Clock}
-            accent="warning"
-          />
-          <StatPill
-            label="Annulées"
-            value={stats.reservationsCancelled}
-            sub="Historique"
-            icon={XCircle}
-            accent="muted"
-          />
-        </div>
-      </section>
-
-      <div className="grid gap-4 lg:grid-cols-3">
-        <Card className="lg:col-span-2">
-          <CardHeader>
-            <CardTitle className="text-base">Réservations — 30 derniers jours</CardTitle>
+      {/* Charts + breakdown */}
+      <div className="grid gap-6 xl:grid-cols-3">
+        <Card className="rounded-2xl xl:col-span-2">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Réservations — 30 derniers jours</CardTitle>
+            <CardDescription>Tendance des nouvelles inscriptions</CardDescription>
           </CardHeader>
-          <CardContent className="h-64">
+          <CardContent className="h-64 pt-2">
             <ResponsiveContainer width="100%" height="100%">
               <LineChart data={data.bookingsTrend}>
-                <CartesianGrid strokeDasharray="3 3" />
+                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                 <XAxis dataKey="date" tickFormatter={(v) => v.slice(5)} fontSize={11} />
                 <YAxis allowDecimals={false} fontSize={11} />
                 <Tooltip />
-                <Line type="monotone" dataKey="count" stroke="#2D6A4F" strokeWidth={2} />
+                <Line type="monotone" dataKey="count" stroke="#2D6A4F" strokeWidth={2} dot={false} />
               </LineChart>
             </ResponsiveContainer>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Remplissage actif</CardTitle>
+        <Card className="rounded-2xl">
+          <CardHeader className="pb-2">
+            <CardTitle className="text-base font-semibold">Statut des réservations</CardTitle>
+            <CardDescription>{stats.reservationsTotal} inscriptions au total</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="font-display text-3xl font-bold text-foreground">{data.fillRatePercent}%</div>
-            <p className="mt-1 text-sm text-muted-foreground">Offres actives uniquement</p>
-            <div className="mt-4">
-              <div className="h-2.5 overflow-hidden rounded-full bg-secondary">
-                <div
-                  className="h-full rounded-full bg-forest transition-all"
-                  style={{ width: `${data.fillRatePercent}%` }}
-                />
+          <CardContent className="space-y-5 pt-2">
+            {reservationRows.map((row) => (
+              <div key={row.label} className="space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="flex items-center gap-2 text-muted-foreground">
+                    <row.icon className="h-4 w-4" />
+                    {row.label}
+                  </span>
+                  <span className="font-semibold tabular-nums text-foreground">{row.value}</span>
+                </div>
+                <div className="h-2 overflow-hidden rounded-full bg-secondary">
+                  <div
+                    className={cn("h-full rounded-full transition-all", row.color)}
+                    style={{ width: `${(row.value / resaMax) * 100}%` }}
+                  />
+                </div>
               </div>
+            ))}
+            <div className="rounded-xl border border-border/70 bg-secondary/30 px-4 py-3">
+              <p className="text-xs text-muted-foreground">Remplissage offres actives</p>
+              <p className="mt-1 font-display text-2xl font-bold text-foreground">{data.fillRatePercent}%</p>
+              {stats.fullOffers > 0 && (
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {stats.fullOffers} voyage{stats.fullOffers > 1 ? "s" : ""} complet{stats.fullOffers > 1 ? "s" : ""}
+                </p>
+              )}
             </div>
-            <p className="mt-4 text-sm text-muted-foreground">
-              Global toutes offres : <span className="font-semibold text-foreground">{stats.fillRate}%</span>
-              {" · "}
-              {stats.totalSpotsTaken}/{stats.totalCapacity} places
-            </p>
           </CardContent>
         </Card>
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Voyages populaires (ce mois)</CardTitle>
-            <Link to="/admin/trips" className="text-xs font-medium text-forest hover:underline">
-              Voir tout →
-            </Link>
+      {/* Trips + popular */}
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="rounded-2xl">
+          <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-4">
+            <div>
+              <CardTitle className="text-base font-semibold">Prochaines offres</CardTitle>
+              <CardDescription className="mt-1">Voyages actifs à venir</CardDescription>
+            </div>
+            <Button asChild variant="ghost" size="sm" className="shrink-0 gap-1 text-forest">
+              <Link to="/admin/trips">
+                Tout voir
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            </Button>
           </CardHeader>
-          <CardContent className="h-56">
-            {data.topOffers.length > 0 ? (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={data.topOffers}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="title" fontSize={10} interval={0} angle={-15} textAnchor="end" height={60} />
-                  <YAxis allowDecimals={false} fontSize={11} />
-                  <Tooltip />
-                  <Bar dataKey="bookings" fill="#52B788" radius={[4, 4, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            ) : (
-              <p className="text-sm text-muted-foreground">Aucune réservation ce mois.</p>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-base">Prochaines offres</CardTitle>
-            <Link to="/admin/trips" className="text-xs font-medium text-forest hover:underline">
-              Gérer →
-            </Link>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {upcomingTrips.map((t) => {
+          <CardContent className="space-y-2">
+            {upcomingTrips.length > 0 ? (
+              upcomingTrips.map((t) => {
                 const remaining = tripSpotsRemaining(t.capacity, t.spotsTaken);
                 const full = remaining <= 0;
                 return (
@@ -323,111 +294,174 @@ function AdminDashboardPage() {
                     key={t.id}
                     to="/admin/trips/$tripId"
                     params={{ tripId: t.id }}
-                    className="flex items-center justify-between gap-3 rounded-xl border border-border p-3 text-sm transition hover:bg-secondary/50"
+                    className="flex items-center justify-between gap-4 rounded-xl border border-border px-4 py-3.5 transition hover:border-forest/20 hover:bg-secondary/40"
                   >
                     <div className="min-w-0">
-                      <p className="font-medium line-clamp-1">{t.title}</p>
-                      <p className="text-xs text-muted-foreground">
+                      <p className="font-medium text-foreground line-clamp-1">{t.title}</p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
                         {t.departureDate ? formatDepartureDate(t) ?? t.departureDate : "Date à définir"}
                         {" · "}
                         {t.spotsTaken}/{t.capacity} places
                       </p>
                     </div>
-                    <Badge variant={full ? "destructive" : "secondary"}>
+                    <Badge variant={full ? "destructive" : "secondary"} className="shrink-0">
                       {full ? "Complet" : `${remaining} libre${remaining > 1 ? "s" : ""}`}
                     </Badge>
                   </Link>
                 );
-              })}
-              {upcomingTrips.length === 0 && (
-                <p className="text-sm text-muted-foreground">Aucune offre active.</p>
-              )}
-            </div>
+              })
+            ) : (
+              <EmptyBlock message="Aucune offre active pour le moment." actionLabel="Créer une offre" onAction={() => setDialogOpen(true)} />
+            )}
+          </CardContent>
+        </Card>
+
+        <Card className="rounded-2xl">
+          <CardHeader className="pb-4">
+            <CardTitle className="text-base font-semibold">Voyages populaires</CardTitle>
+            <CardDescription>Réservations ce mois</CardDescription>
+          </CardHeader>
+          <CardContent className="h-56">
+            {data.topOffers.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={data.topOffers} margin={{ bottom: 48 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="title" fontSize={10} interval={0} angle={-20} textAnchor="end" height={56} />
+                  <YAxis allowDecimals={false} fontSize={11} />
+                  <Tooltip />
+                  <Bar dataKey="bookings" fill="#52B788" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <EmptyBlock message="Aucune réservation enregistrée ce mois." />
+            )}
           </CardContent>
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <CardTitle className="text-base">Dernières réservations</CardTitle>
-          <Link to="/admin/reservations" className="text-sm font-medium text-forest hover:underline">
-            Voir toutes →
-          </Link>
+      {/* Recent reservations */}
+      <Card className="rounded-2xl">
+        <CardHeader className="flex flex-row items-start justify-between gap-4 space-y-0 pb-4">
+          <div>
+            <CardTitle className="text-base font-semibold">Dernières réservations</CardTitle>
+            <CardDescription className="mt-1">Les 6 inscriptions les plus récentes</CardDescription>
+          </div>
+          <Button asChild variant="ghost" size="sm" className="shrink-0 gap-1 text-forest">
+            <Link to="/admin/reservations">
+              Voir toutes
+              <ChevronRight className="h-4 w-4" />
+            </Link>
+          </Button>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {data.recentBookings.map((r) => (
-              <div
-                key={r.id}
-                className="flex items-start justify-between gap-3 rounded-xl border border-border p-3 text-sm"
-              >
-                <div className="min-w-0">
-                  <div className="font-medium">{r.bookingRef}</div>
-                  <div className="text-muted-foreground">
-                    {r.firstName} {r.lastName}
+          {data.recentBookings.length > 0 ? (
+            <div className="divide-y divide-border rounded-xl border border-border">
+              {data.recentBookings.slice(0, 6).map((r) => (
+                <div
+                  key={r.id}
+                  className="flex flex-col gap-2 px-4 py-4 sm:flex-row sm:items-center sm:justify-between"
+                >
+                  <div className="min-w-0 flex-1">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-medium text-foreground">
+                        {r.firstName} {r.lastName}
+                      </span>
+                      <span className="font-mono text-xs text-muted-foreground">{r.bookingRef}</span>
+                    </div>
+                    <p className="mt-0.5 text-sm text-muted-foreground line-clamp-1">
+                      {r.trip?.title ?? "Voyage"} · {r.location}
+                    </p>
                   </div>
-                  <div className="mt-0.5 text-xs text-muted-foreground line-clamp-1">
-                    {r.trip?.title ?? "Voyage"} · {r.location}
+                  <div className="flex shrink-0 items-center gap-3">
+                    <a href={`tel:${r.phone}`} className="text-sm text-forest hover:underline">
+                      {r.phone}
+                    </a>
+                    <Badge variant="secondary">{reservationStatusLabel(r.status)}</Badge>
                   </div>
-                  <a href={`tel:${r.phone}`} className="text-xs text-forest hover:underline">
-                    {r.phone}
-                  </a>
                 </div>
-                <span className="shrink-0 rounded-full bg-secondary px-2 py-0.5 text-xs font-medium">
-                  {reservationStatusLabel(r.status)}
-                </span>
-              </div>
-            ))}
-          </div>
-          {data.recentBookings.length === 0 && (
-            <p className="text-sm text-muted-foreground">Aucune réservation pour le moment.</p>
+              ))}
+            </div>
+          ) : (
+            <EmptyBlock message="Aucune réservation pour le moment." actionLabel="Inscrire un client" actionTo="/admin/inscriptions" />
           )}
         </CardContent>
       </Card>
+
+      {/* QR codes — collapsed by default */}
+      <Accordion type="single" collapsible className="rounded-2xl border border-border bg-card px-5">
+        <AccordionItem value="qr" className="border-none">
+          <AccordionTrigger className="py-5 hover:no-underline">
+            <span className="flex items-center gap-2 text-base font-semibold">
+              <QrCode className="h-4 w-4 text-forest" />
+              Connexion rapide (QR codes)
+            </span>
+          </AccordionTrigger>
+          <AccordionContent className="pb-5 pt-0">
+            <PortalLoginQrSection embedded />
+          </AccordionContent>
+        </AccordionItem>
+      </Accordion>
 
       <TripFormDialog open={dialogOpen} onOpenChange={setDialogOpen} />
     </div>
   );
 }
 
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{children}</h2>
-  );
+function SectionHeading({ title }: { title: string }) {
+  return <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{title}</h2>;
 }
 
-function StatPill({
+function KpiCard({
   label,
   value,
-  sub,
+  hint,
   icon: Icon,
-  valueClassName,
-  accent,
 }: {
   label: string;
   value: string | number;
-  sub?: string;
-  icon?: typeof Calendar;
-  valueClassName?: string;
-  accent?: "success" | "warning" | "muted";
+  hint?: string;
+  icon: typeof Calendar;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-xl border border-border bg-card px-4 py-3",
-        accent === "success" && "border-emerald-200/80 bg-emerald-50/30",
-        accent === "warning" && "border-amber-200/80 bg-amber-50/30",
-        accent === "muted" && "bg-secondary/30",
-      )}
-    >
-      <div className="flex items-start justify-between gap-2">
+    <div className="rounded-2xl border border-border bg-card p-5 md:p-6">
+      <div className="flex items-start justify-between gap-3">
         <p className="text-sm font-medium text-muted-foreground">{label}</p>
-        {Icon && <Icon className="h-4 w-4 shrink-0 text-forest/70" />}
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-forest/10">
+          <Icon className="h-4 w-4 text-forest" />
+        </div>
       </div>
-      <p className={cn("mt-0.5 font-display text-2xl font-bold text-foreground md:text-3xl", valueClassName)}>
+      <p className="mt-3 font-display text-2xl font-bold tracking-tight text-foreground md:text-3xl">
         {value}
       </p>
-      {sub && <p className="mt-0.5 text-sm text-muted-foreground">{sub}</p>}
+      {hint && <p className="mt-1.5 text-sm text-muted-foreground">{hint}</p>}
+    </div>
+  );
+}
+
+function EmptyBlock({
+  message,
+  actionLabel,
+  actionTo,
+  onAction,
+}: {
+  message: string;
+  actionLabel?: string;
+  actionTo?: string;
+  onAction?: () => void;
+}) {
+  return (
+    <div className="flex flex-col items-center justify-center rounded-xl border border-dashed border-border bg-secondary/20 px-6 py-10 text-center">
+      <p className="text-sm text-muted-foreground">{message}</p>
+      {actionLabel && actionTo && (
+        <Button asChild variant="outline" size="sm" className="mt-4 rounded-full">
+          <Link to={actionTo}>{actionLabel}</Link>
+        </Button>
+      )}
+      {actionLabel && onAction && (
+        <Button variant="outline" size="sm" className="mt-4 rounded-full" onClick={onAction}>
+          {actionLabel}
+        </Button>
+      )}
     </div>
   );
 }
